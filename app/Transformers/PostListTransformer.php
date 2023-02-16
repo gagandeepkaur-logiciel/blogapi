@@ -2,9 +2,9 @@
 
 namespace App\Transformers;
 
-use App\Models\Category;
 use App\Models\Post;
 use League\Fractal\TransformerAbstract;
+use Spatie\Fractal\Fractal;
 
 class PostListTransformer extends TransformerAbstract
 {
@@ -23,7 +23,7 @@ class PostListTransformer extends TransformerAbstract
      * @var array
      */
     protected array $availableIncludes = [
-        // 'comments',
+        'comments', 'post'
     ];
 
     /**
@@ -31,15 +31,23 @@ class PostListTransformer extends TransformerAbstract
      *
      * @return array
      */
-    public function transform($post)
+    public function transform(Post $post)
     {
-        $userid = auth()->user()->id;
-        $categoryid = Post::where('userid', $userid)->pluck('categoryid')->first();
-        $categoryname = Category::where('id', $categoryid)->pluck('name');
         return [
             'title' => $post->title,
-            'category' => $categoryname,
+            'category' => $post->categoryid,
             'created_by' => $post->created_by,
         ];
+    }
+    
+    public function includeComments(Post $post)
+    {
+        $comments = $post->comments;
+        return $this->collection($comments, new CommentTransformer());
+    }
+    
+    public function includePost(Post $post)
+    {
+        return $this->item($post, new PostListTransformer());
     }
 }

@@ -6,6 +6,7 @@ use League\Fractal\TransformerAbstract;
 use App\Models\Post;
 use App\Models\Category;
 use App\Models\Comment;
+use App\Models\User;
 use App\Transformers\PostListTransformer;
 
 class CommentTransformer extends TransformerAbstract
@@ -16,7 +17,7 @@ class CommentTransformer extends TransformerAbstract
      * @var array
      */
     protected array $defaultIncludes = [
-        // 'comments',
+        // 
     ];
     
     /**
@@ -25,7 +26,7 @@ class CommentTransformer extends TransformerAbstract
      * @var array
      */
     protected array $availableIncludes = [
-        // 'comments',
+        'post', 
     ];
     
     /**
@@ -33,13 +34,16 @@ class CommentTransformer extends TransformerAbstract
      *
      * @return array
      */
-    public function transform($post)
+    public function transform(Comment $comments)
     {
         return [
-            'title' => $post->title,
-            'created_by' => $post->created_by,
+            'comment' => $comments->comment,
+            'posted_by' => $comments->created_by,
         ];
     }
     
-    
+    public function includePost(Comment $comments){
+        $post = $comments->post;
+        return $this->item($post, new PostListTransformer());
+    }
 }
