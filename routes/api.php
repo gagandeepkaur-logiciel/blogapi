@@ -6,6 +6,7 @@ use App\Http\Controllers\API\LoginController;
 use App\Http\Controllers\API\PostController;
 use App\Http\Controllers\API\SuperadminController;
 use App\Http\Controllers\FacebookController;
+use App\Http\Controllers\WebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +28,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::post('login', [LoginController::class, 'login'])->name('loggedin');
 
 Route::group(['middleware' => 'auth:api'], function () {
+
     // Admin
     Route::controller(PostController::class)->group(function () {
         Route::post('insert', 'insertpost'); // Insert post
@@ -39,21 +41,23 @@ Route::group(['middleware' => 'auth:api'], function () {
         Route::post('comment/{id}', 'comment'); // Insert comment
         Route::get('postcommentlist/{id}', 'show'); // Post Comment Listing
         Route::get('commentpostlisting/{id}', 'showlist'); // Comment Post Listing
-        Route::get('listing/{id}', 'list'); // List
     });
     Route::controller(CategoryController::class)->group(function () { // Catgeory
-        Route::post('insertcategory', 'insert');
-        Route::get('listcategory', 'list');
-        Route::put('editcategory/{name}', 'edit');
-        Route::delete('deletecategory/{name}', 'delete');
+        Route::post('insertcategory', 'insert'); // Insert category
+        Route::get('listcategory', 'list'); // Listing
+        Route::put('editcategory/{name}', 'edit'); // Edit category
+        Route::delete('deletecategory/{name}', 'delete'); // Delete category
     });
+    Route::get('logout', [LoginController::class, 'logged_out']); // Logout
+
     // Super Admin
     Route::get('listadmin', [SuperadminController::class, 'listadmin']); //Admin listing
-    Route::get('logout', [LoginController::class, 'logged_out']); // Logout
 });
 // Facebook Authentication Routes
-Route::group(['middleware' => ['web']], function () {
-    Route::get('auth', [FacebookController::class, 'loginUsingFacebook']); // Login
-    Route::get('callback', [FacebookController::class, 'callbackFromFacebook']); // Redirect
-    Route::get('webhook', [FacebookController::class, 'backFromWebHook']); // Redirect
+Route::controller(FacebookController::class)->group(function(){
+    Route::group(['middleware' => ['web']], function () {
+        Route::get('auth', 'loginUsingFacebook'); // Login
+        Route::get('callback', 'callbackFromFacebook'); // Redirect
+    });
 });
+Route::get('webhook', [WebhookController::class, 'backFromWebHook']); // Redirect

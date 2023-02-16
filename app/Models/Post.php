@@ -12,7 +12,15 @@ class Post extends Model
     use HasFactory;
 
     protected $fillable = [
-        'userid', 'categoryid', 'title', 'description', 'image', 'facebook_post_id', 'facebook_msg_id', 'pageid', 'created_by',
+        'userid', 
+        'categoryid', 
+        'title', 
+        'description', 
+        'image', 
+        'facebook_post_id', 
+        'facebook_msg_id', 
+        'pageid', 
+        'created_by',
     ];
 
     public function user()

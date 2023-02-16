@@ -11,7 +11,13 @@ class Comment extends Model
     use HasFactory;
 
     protected $fillable = [
-        'userid', 'postid', 'comment', 'facebook_post_id', 'comment_id', 'pageid', 'created_by',
+        'userid', 
+        'postid', 
+        'comment', 
+        'facebook_post_id', 
+        'comment_id', 
+        'pageid', 
+        'created_by',
     ];
 
     public function post(){

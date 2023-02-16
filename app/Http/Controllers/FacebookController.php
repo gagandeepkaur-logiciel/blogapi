@@ -11,6 +11,10 @@ use Laravel\Socialite\Facades\Socialite;
 
 class FacebookController extends Controller
 {
+    /**
+     * Login through facebook 
+     * authentication
+     */
     public function loginUsingFacebook()
     {
         return Socialite::driver('facebook')->redirect();
@@ -34,13 +38,8 @@ class FacebookController extends Controller
             Auth::login($saveUser, true);
 
             return response()->json(['success' => $user->user['id']]);
-            // return redirect('/');
         } catch (\Throwable $th) {
             throw $th;
         }
-    }
-
-    public function backFromWebHook(){
-        echo "yes";
     }
 }

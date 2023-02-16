@@ -5,16 +5,17 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Category;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
-use PhpParser\Node\Stmt\TryCatch;
 use App\Http\Resources\CategoryCollection;
 use App\Http\Resources\CategoryResource;
 use App\Transformers\RootCategoryTransformer;
-use Spatie\Fractal\Fractal;
+use Illuminate\Support\Facades\Validator;
 
 class CategoryController extends Controller
 {
+     /**
+     * Insert category
+     */
     public function insert(Request $request)
     {
         $userid = auth()->user()->id;
@@ -25,37 +26,44 @@ class CategoryController extends Controller
         if ($validator->fails()) {
             return response()->json(['success' => false, 'message' => $validator]);
         }
+        
         try {
-            $categoryid = DB::table('categories')->where('name', $request->parent_category)->first('id');
+            $categoryid = DB::table('categories')
+            ->where('name', $request->parent_category)
+            ->first('id');
+
             if (!empty($categoryid)) {
-                DB::table('categories')->insert([
+                Category::create([
                     'userid' => $userid,
                     'name' => $request->name,
                     'category_id' => $categoryid->id,
                 ]);
-            } else {
-                DB::table('categories')->insert([
-                    'userid' => $userid,
-                    'name' => $request->name,
-                    'category_id' => NULL,
-                ]);
             }
+
             return response()->json(['success' => 'Category inserted successfully']);
         } catch (\Exception $e) {
             return response()->json($e);
         }
     }
 
+    /**
+     * Retrieve category list including all sub-categories
+     */
     public function list(Request $request)
     {
         try {
-            $categories = Category::whereNull('category_id')->with('subcategories')->get();
+            $categories = Category::whereNull('category_id')
+            ->with('subcategories')->get();
+            
             return $categories->transformWith(new RootCategoryTransformer())->toArray();
         } catch (\Exception $e) {
             return response()->json($e);
         }
     }
 
+    /**
+     * Edit category name 
+     */
     public function edit(Request $request, $name)
     {
         $validator = Validator::make($request->all(), [
@@ -68,15 +76,20 @@ class CategoryController extends Controller
             Category::where('name', $name)->update([
                 'name' => $request->name,
             ]);
+
             return response()->json(['success' => 'Updates successfully']);
         } catch (\Exception $e) {
             return response()->json($e);
         }
     }
 
+    /**
+     * Can delete category which has no children  
+     */
     public function delete($name){
         try {
             Category::where('name', $name)->delete();
+            
             return response()->json(['success' => 'Deleted successfully']);
         } catch (\Exception $e) {
             return response()->json($e);

@@ -12,6 +12,9 @@ use Laravel\Socialite\Facades\Socialite;
 
 class LoginController extends Controller
 {
+     /**
+     * Login 
+     */
     public function login(Request $request)
     {
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
@@ -26,13 +29,14 @@ class LoginController extends Controller
         }
     }
 
-
+     /**
+     * Logout
+     */
     public function logged_out(Request $request)
     {
         try {
             $user = Auth::user()->token();
             $user->revoke();
-            // Socialite::driver('facebook')->stateless()->user();
             return response()->json(['success' => true, 'message' => 'User logged out!']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);

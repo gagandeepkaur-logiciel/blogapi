@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Validator;
 
 class CommentController extends Controller
 {
+    /**
+     * Insert comment
+     */
     public function comment(Request $request, $id)
     {
         $userid = auth()->user()->id;
@@ -27,77 +30,89 @@ class CommentController extends Controller
         }
         try {
             if (!empty(auth()->user()->token)) {
-                $postid = Post::where('id', $id)->pluck('facebook_post_id')[0];
-                // dd($postid);
+                $postid = Post::where('id', $id)
+                ->pluck('facebook_post_id')[0];
                 $accesstoken = auth()->user()->token;
                 $facebook_user_id = auth()->user()->facebook_id;
-                $res = Http::get('https://graph.facebook.com/v15.0/me/accounts?access_token=' . $accesstoken . '');
-                // return $res->json();
-                $pagetoken = $res['data'][0]['access_token'];
-                $pageid = $res['data'][0]['id'];
-                $response = Http::get('https://graph.facebook.com/v15.0/' . $pageid . '/feed?&access_token=' . $pagetoken . '');
-                $r = Http::post('https://graph.facebook.com/v15.0/' . $postid . '/comments/?message=' . $comment . '&access_token=' . $pagetoken . '');
+                $profileresponse = Http::get(env('FACEBOOK_GRAPH_API').'me/accounts?access_token=' . $accesstoken . '');
+                $pagetoken = $profileresponse['data'][0]['access_token'];
+                $pageid = $profileresponse['data'][0]['id'];
+                $feedresponse = Http::get(env('FACEBOOK_GRAPH_API'). $pageid . '/feed?&access_token=' . $pagetoken . '');
+                $commentresponse = Http::post(env('FACEBOOK_GRAPH_API'). $postid . '/comments/?message=' . $comment . '&access_token=' . $pagetoken . '');
                 $data = Comment::create([
                     'userid' => $userid,
                     'postid' => $id,
                     'comment' => $comment,
                     'facebook_post_id' => $postid,
-                    'comment_id' => $r['id'],
+                    'comment_id' => $commentresponse['id'],
                     'pageid' => $pageid,
                     'created_by' => $userid,
                 ]);
-                return $r->json();
+
+                return $commentresponse->json(['success' => 'Data created successfully']);
+            }else{
+                $data = Comment::create([
+                    'userid' => $userid,
+                    'postid' => $id,
+                    'comment' => $comment,
+                    'created_by' => $userid,
+                ]);
+
+                return $data->json(['success' => 'Data created successfully']);
             }
         } catch (\Exception$e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 
+    /**
+     * List post-comments
+     */
     public function show($id)
     {
         try {
             $userid = auth()->user()->id;
             $type = auth()->user()->type;
             if ($type == 1) {
-                $data = Post::where('userid', $userid)->where('id', $id)->with('comments')->get();
+                $data = Post::where('userid', $userid)
+                ->where('id', $id)
+                ->with('comments')
+                ->get();
             } else {
-                $data = Post::where('id', $id)->with('comments')->get();
+                $data = Post::where('id', $id)
+                ->with('comments')
+                ->get();
             }
+
             return collect($data)->transformWith(new PostListTransformer());
         } catch (\Exception$e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 
+    /**
+     * List comments-post (Inverse of hasMany)
+     */
     public function showlist($id)
     {
         try {
             $userid = auth()->user()->id;
             $type = auth()->user()->type;
             if ($type == 1) {
-                $data = Comment::where('userid', $userid)->where('postid', $id)->with('post')->get();
+                $data = Comment::where('userid', $userid)
+                ->where('postid', $id)
+                ->with('post')
+                ->get();
             } else {
-                $data = Comment::where('postid', $id)->with('post')->get();
+                $data = Comment::where('postid', $id)
+                ->with('post')
+                ->get();
             }
+
             return collect($data)->transformWith(new CommentTransformer());
         } catch (\Exception$e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
 
-        }
-    }
-
-    function list($id) {
-        try {
-            $userid = auth()->user()->id;
-            $type = auth()->user()->type;
-            if ($type == 1) {
-                $data = Post::where('userid', $userid)->where('id', $id)->with('comments')->get();
-            } else {
-                $data = Post::where('id', $id)->with('comments')->get();
-            }
-            return collect($data)->transformWith(new PostListTransformer());
-        } catch (\Exception$e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 }
