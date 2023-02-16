@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
+use App\Transformers\CommentTransformer;
 
 class CommentController extends Controller
 {
@@ -48,6 +49,18 @@ class CommentController extends Controller
             }
         } catch (\Exception$e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public function show($id)
+    {
+        $userid = auth()->user()->id;
+        $type = auth()->user()->type;
+        if($type == 1){
+            $data = Post::where('userid', $userid)->where('id', $id)->with('comments')->get();
+            // dd($userid);
+            return collect($data)->transformWith(new CommentTransformer());
+            // return $data;
         }
     }
 }

@@ -12,12 +12,4 @@ class Category extends Model
     public function subcategories(){
         return $this->hasMany(Category::class)->with('subcategories');
     }
-
-    // public function categories(){
-    //     return $this->hasMany(Category::class)->with('root');
-    // }
-
-    // public function subcategories(){
-    //     return $this->hasMany(Category::class)->with('categories');
-    // }
 }

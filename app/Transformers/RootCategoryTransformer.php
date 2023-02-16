@@ -41,7 +41,6 @@ class RootCategoryTransformer extends TransformerAbstract
             'id' => $category->id,
             'name' => $category->name,
             'category_id' => $category->category_id,
-            // 'categories' => CategoryResource::collection($category->subcategories),
         ];
     }
 
@@ -55,5 +54,3 @@ class RootCategoryTransformer extends TransformerAbstract
     }
 }
 
-// "league/fractal": "^0.20.1",
-// "yajra/laravel-datatables-fractal": "^9.1"

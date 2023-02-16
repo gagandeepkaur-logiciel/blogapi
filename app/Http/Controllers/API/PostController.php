@@ -3,14 +3,14 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Auth;
 use App\Models\Post;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Http\Client\Response;
 use App\Transformers\PostListTransformer;
+use Illuminate\Http\Client\Response;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Validator;
 
 class PostController extends Controller
 {
@@ -101,45 +101,9 @@ class PostController extends Controller
                     return response()->json(['success' => $success]);
                 }
             }
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
-    }
-
-    public function atoken(Request $request)
-    {
-        $name = $request->page;
-        $accesstoken = auth()->user()->token;
-        $res = Http::get('https://graph.facebook.com/v15.0/me/accounts?access_token=' . $accesstoken . '');
-        $r = count($res['data']);
-        for ($i = 0; $i <= $r; $i++) {
-            if ($n = $res['data'][$i]['name'] == $name) {
-                $ros = Http::get('https://graph.facebook.com/v15.0/me/accounts?access_token=' . $accesstoken . '')['data'][$i]['id'];
-                return $ros;
-            }
-        }
-        // $title = $request->title;
-        // $name = $request->page;
-        // $accesstoken = auth()->user()->token;
-        // $res = Http::get('https://graph.facebook.com/v15.0/me/accounts?access_token=' . $accesstoken . '');
-        // $r = count($res['data']);
-        // for ($i = 0; $i <= $r; $i++) {
-        //     if ($n = $res['data'][$i]['name'] == $name) {
-        //         $ros = Http::get('https://graph.facebook.com/v15.0/me/accounts?access_token=' . $accesstoken . '')['data'][$i]['id'];
-        //         // return $ros;
-        //         $pageid = $ros;
-        //         $pagetoken = $res['data'][0]['access_token'];
-        //         $file = $request->image;
-        //         $extension = $request->image->extension();
-        //         $filename = time() . '.' . $extension;
-        //         $response = Http::attach(
-        //             'attachment',
-        //             file_get_contents($request->image),
-        //             $filename
-        //         )->post('https://graph.facebook.com/v15.0/' . $pageid . '/photos?message=' . $title . '&access_token=' . $pagetoken . '');
-        //     return $response->json();
-        //     }
-        // }
     }
 
     public function show()
@@ -148,12 +112,12 @@ class PostController extends Controller
             $id = auth()->user()->id;
             $type = auth()->user()->type;
             if ($type == 1) {
-                $data = POST::where('userid', $id)->select('title', 'created_by')->get();
+                $data = POST::where('userid', $id)->get();
             } else {
                 $data = POST::select('title', 'created_by')->get();
             }
             return collect($data)->transformWith(new PostListTransformer())->toArray();
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
@@ -188,7 +152,7 @@ class PostController extends Controller
             ]);
 
             return response()->json(['success' => 'Successfully updated!']);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
@@ -204,7 +168,7 @@ class PostController extends Controller
                 DB::table('posts')->where('userid', $id)->where('title', $request->title)->delete();
             }
             return response()->json(['success' => 'Deleted Successfully!']);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
@@ -221,7 +185,7 @@ class PostController extends Controller
                 $data = POST::where('title', 'LIKE', '%' . $search . '%')->get();
             }
             return fractal($data, new PostListTransformer())->toArray();
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }

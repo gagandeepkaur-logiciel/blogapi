@@ -50,7 +50,7 @@ class CategoryController extends Controller
     {
         try {
             $categories = Category::whereNull('category_id')->with('subcategories')->get();
-            return $categories->transformWith(new RootCategoryTransformer())->respond();
+            return $categories->transformWith(new RootCategoryTransformer())->toArray();
         } catch (\Exception $e) {
             return response()->json($e);
         }

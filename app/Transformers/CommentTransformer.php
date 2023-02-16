@@ -2,11 +2,13 @@
 
 namespace App\Transformers;
 
-use App\Models\Category;
-use App\Models\Post;
 use League\Fractal\TransformerAbstract;
+use App\Models\Post;
+use App\Models\Category;
+use App\Models\Comment;
+use App\Transformers\PostListTransformer;
 
-class PostListTransformer extends TransformerAbstract
+class CommentTransformer extends TransformerAbstract
 {
     /**
      * List of resources to automatically include
@@ -14,9 +16,9 @@ class PostListTransformer extends TransformerAbstract
      * @var array
      */
     protected array $defaultIncludes = [
-        //
+        // 'comments',
     ];
-
+    
     /**
      * List of resources possible to include
      *
@@ -25,7 +27,7 @@ class PostListTransformer extends TransformerAbstract
     protected array $availableIncludes = [
         // 'comments',
     ];
-
+    
     /**
      * A Fractal transformer.
      *
@@ -33,13 +35,11 @@ class PostListTransformer extends TransformerAbstract
      */
     public function transform($post)
     {
-        $userid = auth()->user()->id;
-        $categoryid = Post::where('userid', $userid)->pluck('categoryid')->first();
-        $categoryname = Category::where('id', $categoryid)->pluck('name');
         return [
             'title' => $post->title,
-            'category' => $categoryname,
             'created_by' => $post->created_by,
         ];
     }
+    
+    
 }
