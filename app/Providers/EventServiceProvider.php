@@ -8,6 +8,8 @@ use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvi
 use Illuminate\Support\Facades\Event;
 use App\Events\CreatePost;
 use App\Listeners\CreatedPost;
+use App\Events\CreateComment;
+use App\Listeners\CreatedComment;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -23,6 +25,10 @@ class EventServiceProvider extends ServiceProvider
 
         CreatePost::class => [
             CreatedPost::class,
+        ],
+
+        CreateComment::class => [
+            CreatedComment::class,
         ],
     ];
 

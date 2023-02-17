@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Events\CreatePost;
-use Illuminate\Support\Facades\Storage;
+use App\Models\User;
 
 class PostController extends Controller
 {
@@ -51,11 +51,13 @@ class PostController extends Controller
                         'created_by' => $id,
                     ]);
 
+                    $user = User::where('id', $create_data['userid'])->get();
+
                     if (!empty(auth()->user()->token)){
-                        CreatePost::dispatch([$request->all(),$create_data]);
+                        CreatePost::dispatch([$create_data, $user]);
                     }
 
-                    return response()->json(['success' => $create_data]);
+                    return response()->json(['success' => 'Post has been uploaded successfully']);
                 } else {
                     $create_data = Post::create([
                         'userid' => $id,
@@ -65,11 +67,13 @@ class PostController extends Controller
                         'created_by' => $id,
                     ]);
 
+                    $user = User::where('id', $create_data['userid'])->get();
+
                     if (!empty(auth()->user()->token)){
-                        CreatePost::dispatch([$request->all(),$create_data]);
+                        CreatePost::dispatch([$create_data, $user]);
                     }
 
-                    return response()->json(['success' => $create_data]);
+                    return response()->json(['success' => 'Post has been uploaded successfully']);
                 }
         } catch (\Exception$e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);

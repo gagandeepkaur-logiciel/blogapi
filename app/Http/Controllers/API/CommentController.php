@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
 use App\Models\Post;
+use App\Models\User;
 use App\Transformers\CommentTransformer;
 use App\Transformers\PostListTransformer;
 use Illuminate\Http\Client\Response;
@@ -12,6 +13,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
+use App\Events\CreateComment;
+use Illuminate\Database\QueryException;
 
 class CommentController extends Controller
 {
@@ -29,39 +32,22 @@ class CommentController extends Controller
             return response()->json(['error' => $validator->errors()], 401);
         }
         try {
-            if (!empty(auth()->user()->token)) {
-                $postid = Post::where('id', $id)
-                ->pluck('facebook_post_id')[0];
-                $accesstoken = auth()->user()->token;
-                $facebook_user_id = auth()->user()->facebook_id;
-                $profileresponse = Http::get(env('FACEBOOK_GRAPH_API').'me/accounts?access_token=' . $accesstoken . '');
-                $pagetoken = $profileresponse['data'][0]['access_token'];
-                $pageid = $profileresponse['data'][0]['id'];
-                $feedresponse = Http::get(env('FACEBOOK_GRAPH_API'). $pageid . '/feed?&access_token=' . $pagetoken . '');
-                $commentresponse = Http::post(env('FACEBOOK_GRAPH_API'). $postid . '/comments/?message=' . $comment . '&access_token=' . $pagetoken . '');
-                $data = Comment::create([
-                    'userid' => $userid,
-                    'postid' => $id,
-                    'comment' => $comment,
-                    'facebook_post_id' => $postid,
-                    'comment_id' => $commentresponse['id'],
-                    'pageid' => $pageid,
-                    'created_by' => $userid,
-                ]);
-
-                return $commentresponse->json(['success' => 'Data created successfully']);
-            }else{
-                $data = Comment::create([
+                $create_comment = Comment::create([
                     'userid' => $userid,
                     'postid' => $id,
                     'comment' => $comment,
                     'created_by' => $userid,
                 ]);
 
-                return $data->json(['success' => 'Data created successfully']);
-            }
-        } catch (\Exception$e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+                $user = User::where('id', $create_comment['userid'])->get();
+
+                if (!empty(auth()->user()->token)){
+                    CreateComment::dispatch([$create_comment, $user]);
+                }
+
+                return (['success' => $create_comment]);
+        } catch (QueryException $e) {
+            return response()->json('Cannot add or update a child row');
         }
     }
 
