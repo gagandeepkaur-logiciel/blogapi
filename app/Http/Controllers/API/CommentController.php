@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use App\Events\CreateComment;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Log;
 
 class CommentController extends Controller
 {
@@ -27,32 +28,34 @@ class CommentController extends Controller
         $comment = $request->comment;
         $validator = Validator::make($request->all(), [
             'comment' => 'required',
+            'facebook_page' => 'string',
         ]);
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 401);
         }
         try {
-                $create_comment = Comment::create([
-                    'userid' => $userid,
-                    'postid' => $id,
-                    'comment' => $comment,
-                    'created_by' => $userid,
-                ]);
+            $data = Comment::create([
+                'userid' => $userid,
+                'postid' => $id,
+                'comment' => $comment,
+                'created_by' => $userid,
+            ]);
 
-                $user = User::where('id', $create_comment['userid'])->get();
+            $user = User::where('id', $data['userid'])->first();
 
-                if (!empty(auth()->user()->token)){
-                    CreateComment::dispatch([$create_comment, $user]);
-                }
+            if (!empty(auth()->user()->token)) {
+                event(new CreateComment($data, $user));
+            }
 
-                return (['success' => $create_comment]);
+            return response()->json(['success' => 'Comment posted successfully']);
         } catch (QueryException $e) {
-            return response()->json('Cannot add or update a child row');
+            Log::critical($e);            
+            return response('Something went wrong'); 
         }
     }
 
     /**
-     * List post-comments
+     * List post-comments (hasMany)
      */
     public function show($id)
     {
@@ -61,17 +64,17 @@ class CommentController extends Controller
             $type = auth()->user()->type;
             if ($type == 1) {
                 $data = Post::where('userid', $userid)
-                ->where('id', $id)
-                ->with('comments')
-                ->get();
+                    ->where('id', $id)
+                    ->with('comments')
+                    ->get();
             } else {
                 $data = Post::where('id', $id)
-                ->with('comments')
-                ->get();
+                    ->with('comments')
+                    ->get();
             }
 
             return collect($data)->transformWith(new PostListTransformer());
-        } catch (\Exception$e) {
+        } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
@@ -86,19 +89,18 @@ class CommentController extends Controller
             $type = auth()->user()->type;
             if ($type == 1) {
                 $data = Comment::where('userid', $userid)
-                ->where('postid', $id)
-                ->with('post')
-                ->get();
+                    ->where('postid', $id)
+                    ->with('post')
+                    ->get();
             } else {
                 $data = Comment::where('postid', $id)
-                ->with('post')
-                ->get();
+                    ->with('post')
+                    ->get();
             }
 
             return collect($data)->transformWith(new CommentTransformer());
-        } catch (\Exception$e) {
+        } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
-
         }
     }
 }

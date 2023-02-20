@@ -15,15 +15,17 @@ class CreatePost
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
 
-    public $create_data;
+    public $data, $user, $fb_page;
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($create_data)
+    public function __construct($data, $user, $fb_page)
     {
-        $this->create_data = $create_data;
+        $this->data = $data;
+        $this->user = $user;
+        $this->fb_page = $fb_page;
     }
 
     /**

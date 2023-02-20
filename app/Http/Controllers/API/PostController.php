@@ -16,7 +16,7 @@ use App\Models\User;
 
 class PostController extends Controller
 {
-      /**
+    /**
      * Insert post into db and dispatch event
      * for upload post to facebook page
      */
@@ -30,57 +30,59 @@ class PostController extends Controller
             'description' => 'required',
             'image' => 'mimes:png,jpg|image|max:2048',
             'category_name' => 'required',
+            'facebook_page' => 'string',
         ]);
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 401);
         }
         try {
+            $fb_page = $request->facebook_page;
             $categoryid = DB::table('categories')->where('name', $request->category_name)
-            ->first('id');
-                if ($request->hasFile('image')) {
-                    $file = $request->image;
-                    $extension = $request->image->extension();
-                    $filename = time() . '.' . $extension;
-                    $path = $file->storeAs('public/post/', $filename);
-                    $create_data = Post::create([
-                        'userid' => $id,
-                        'categoryid' => $categoryid->id,
-                        'title' => $title,
-                        'description' => $description,
-                        'image' => $filename,
-                        'created_by' => $id,
-                    ]);
+                ->first('id');
+            if ($request->hasFile('image')) {
+                $file = $request->image;
+                $extension = $request->image->extension();
+                $filename = time() . '.' . $extension;
+                $path = $file->storeAs('public/post/', $filename);
+                $data = Post::create([
+                    'userid' => $id,
+                    'categoryid' => $categoryid->id,
+                    'title' => $title,
+                    'description' => $description,
+                    'image' => $filename,
+                    'created_by' => $id,
+                ]);
 
-                    $user = User::where('id', $create_data['userid'])->get();
+                $user = User::where('id', $data['userid'])->first();
 
-                    if (!empty(auth()->user()->token)){
-                        CreatePost::dispatch([$create_data, $user]);
-                    }
-
-                    return response()->json(['success' => 'Post has been uploaded successfully']);
-                } else {
-                    $create_data = Post::create([
-                        'userid' => $id,
-                        'categoryid' => $categoryid->id,
-                        'title' => $title,
-                        'description' => $description,
-                        'created_by' => $id,
-                    ]);
-
-                    $user = User::where('id', $create_data['userid'])->get();
-
-                    if (!empty(auth()->user()->token)){
-                        CreatePost::dispatch([$create_data, $user]);
-                    }
-
-                    return response()->json(['success' => 'Post has been uploaded successfully']);
+                if (!empty(auth()->user()->token)) {
+                    event(new CreatePost($data, $user, $fb_page));
                 }
-        } catch (\Exception$e) {
+
+                return response()->json(['success' => 'Post uploaded successfully']);
+            } else {
+                $data = Post::create([
+                    'userid' => $id,
+                    'categoryid' => $categoryid->id,
+                    'title' => $title,
+                    'description' => $description,
+                    'created_by' => $id,
+                ]);
+
+                $user = User::where('id', $data['userid'])->first();
+
+                if (!empty(auth()->user()->token)) {
+                    event(new CreatePost($data, $user, $fb_page));
+                }
+
+                return response()->json(['success' => 'Message uploaded successfully']);
+            }
+        } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 
-     /**
+    /**
      * Post listing
      */
     public function show()
@@ -93,14 +95,14 @@ class PostController extends Controller
             } else {
                 $data = POST::select('title', 'created_by')->get();
             }
-            
+
             return collect($data)->transformWith(new PostListTransformer())->toArray();
-        } catch (\Exception$e) {
+        } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 
-     /**
+    /**
      * Update post
      */
     public function updatepost(Request $request, $id)
@@ -118,8 +120,8 @@ class PostController extends Controller
             }
 
             $data = DB::table('posts')->where('userid', $userid)
-            ->where('id', $id)
-            ->first();
+                ->where('id', $id)
+                ->first();
             if (!empty($data->file)) {
                 $oldpath = public_path() . "/storage/post/$data->file";
                 unlink($oldpath);
@@ -130,21 +132,21 @@ class PostController extends Controller
             $filename = time() . '.' . $extension;
             $path = $file->storeAs('public/post/', $filename);
             $data = DB::table('posts')->where('userid', $userid)
-            ->where('id', $id)
-            ->update([
-                'title' => $request->title,
-                'description' => $request->description,
-                'file' => $filename,
-                'created_by' => $name,
-            ]);
+                ->where('id', $id)
+                ->update([
+                    'title' => $request->title,
+                    'description' => $request->description,
+                    'file' => $filename,
+                    'created_by' => $name,
+                ]);
 
             return response()->json(['success' => 'Successfully updated!']);
-        } catch (\Exception$e) {
+        } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 
-     /**
+    /**
      * Delete post
      */
     public function deletepost(Request $request)
@@ -152,24 +154,24 @@ class PostController extends Controller
         try {
             $id = auth()->user()->id;
             $data = DB::table('posts')->where('userid', $id)
-            ->where('title', $request->title)
-            ->first();
+                ->where('title', $request->title)
+                ->first();
 
             if (!empty($data->file)) {
                 $oldpath = public_path() . "/storage/post/$data->file";
                 unlink($oldpath);
                 DB::table('posts')->where('userid', $id)
-                ->where('title', $request->title)
-                ->delete();
+                    ->where('title', $request->title)
+                    ->delete();
             }
-            
+
             return response()->json(['success' => 'Deleted Successfully!']);
-        } catch (\Exception$e) {
+        } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 
-     /**
+    /**
      * Search post
      */
     public function searchpost(Request $request)
@@ -180,14 +182,14 @@ class PostController extends Controller
             $search = $request->search;
             if ($type == 1) {
                 $data = POST::where('userid', $id)
-                ->where('title', 'LIKE', '%' . $search . '%')
-                ->get();
+                    ->where('title', 'LIKE', '%' . $search . '%')
+                    ->get();
             } else {
                 $data = POST::where('title', 'LIKE', '%' . $search . '%')->get();
             }
-            
+
             return fractal($data, new PostListTransformer())->toArray();
-        } catch (\Exception$e) {
+        } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
