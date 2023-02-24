@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Laravel\Passport\RefreshToken;
 use Laravel\Passport\Token;
 use Laravel\Socialite\Facades\Socialite;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 
 class LoginController extends Controller
 {
@@ -39,7 +40,7 @@ class LoginController extends Controller
             $user->revoke();
             return response()->json(['success' => true, 'message' => 'User logged out!']);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+            return response()->json(get_class($e));
         }
     }
 }

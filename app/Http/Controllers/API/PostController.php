@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Events\CreatePost;
 use App\Models\User;
+use App\Events\UpdatePost;
 
 class PostController extends Controller
 {
@@ -113,32 +114,41 @@ class PostController extends Controller
             $validator = Validator::make($request->all(), [
                 'title' => 'required',
                 'description' => 'required',
-                'file' => 'mimes:png,jpg',
+                'image' => 'mimes:png,jpg',
             ]);
             if ($validator->fails()) {
                 return response()->json(['error' => $validator->errors()], 401);
             }
 
-            $data = DB::table('posts')->where('userid', $userid)
+            $post = DB::table('posts')->where('userid', $userid)
                 ->where('id', $id)
                 ->first();
-            if (!empty($data->file)) {
-                $oldpath = public_path() . "/storage/post/$data->file";
+            if (!empty($post->image)) {
+                $oldpath = public_path() . "/storage/post/$post->image";
                 unlink($oldpath);
             }
 
-            $file = $request->file;
-            $extension = $request->file->extension();
+            $file = $request->image;
+            $extension = $request->image->extension();
             $filename = time() . '.' . $extension;
             $path = $file->storeAs('public/post/', $filename);
-            $data = DB::table('posts')->where('userid', $userid)
+            DB::table('posts')->where('userid', $userid)
                 ->where('id', $id)
                 ->update([
                     'title' => $request->title,
                     'description' => $request->description,
-                    'file' => $filename,
+                    'image' => $filename,
                     'created_by' => $name,
                 ]);
+                $data = DB::table('posts')->where('userid', $userid)
+                ->where('id', $id)
+                ->first();
+
+            $user = User::where('id', $userid)->first();
+
+            if (!empty(auth()->user()->token)) {
+                event(new UpdatePost($data, $user));
+            }
 
             return response()->json(['success' => 'Successfully updated!']);
         } catch (\Exception $e) {

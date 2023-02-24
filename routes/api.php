@@ -33,7 +33,7 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::controller(PostController::class)->group(function () {
         Route::post('insert', 'insertpost'); // Insert post
         Route::get('search', 'searchpost'); // Search Post
-        Route::get('update/{id}', 'updatepost'); // Update post
+        Route::post('update/{id}', 'updatepost'); // Update post
         Route::get('delete', 'deletepost'); // Delete Post
         Route::get('post', 'show'); // Post listing
     });
@@ -52,12 +52,14 @@ Route::group(['middleware' => 'auth:api'], function () {
 
     // Super Admin
     Route::get('listadmin', [SuperadminController::class, 'listadmin']); //Admin listing
+
+    // Webhook
+    Route::get('webhook', [WebhookController::class, 'backFromWebHook']); // Redirect
 });
 // Facebook Authentication Routes
-Route::controller(FacebookController::class)->group(function(){
+Route::controller(FacebookController::class)->group(function () {
     Route::group(['middleware' => ['web']], function () {
         Route::get('auth', 'loginUsingFacebook'); // Login
         Route::get('callback', 'callbackFromFacebook'); // Redirect
     });
 });
-Route::get('webhook', [WebhookController::class, 'backFromWebHook']); // Redirect

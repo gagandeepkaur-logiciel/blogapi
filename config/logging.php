@@ -63,12 +63,6 @@ return [
             'level' => env('LOG_LEVEL', 'debug'),
         ],
 
-        'facebook' => [
-            'driver' => 'single',
-            'path' => storage_path('logs/facebook.log'),
-            'level' => 'info',
-        ],
-
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),

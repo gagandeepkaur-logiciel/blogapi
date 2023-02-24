@@ -10,6 +10,8 @@ use App\Events\CreatePost;
 use App\Listeners\CreatedPost;
 use App\Events\CreateComment;
 use App\Listeners\CreatedComment;
+use App\Events\UpdatePost;
+use App\Listeners\UpdatedPost;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -29,6 +31,10 @@ class EventServiceProvider extends ServiceProvider
 
         CreateComment::class => [
             CreatedComment::class,
+        ],
+
+        UpdatePost::class => [
+            UpdatedPost::class,
         ],
     ];
 

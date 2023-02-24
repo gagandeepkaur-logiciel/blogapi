@@ -10,22 +10,21 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class CreatePost
+class UpdatePost
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    public $data, $user;
 
-    public $data, $user, $fb_page;
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($data, $user, $fb_page)
+    public function __construct($data, $user)
     {
         $this->data = $data;
         $this->user = $user;
-        $this->fb_page = $fb_page;
     }
 
     /**

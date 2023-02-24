@@ -8,7 +8,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
 class CreatedPost implements ShouldQueue
@@ -44,51 +43,52 @@ class CreatedPost implements ShouldQueue
             $post = $event->data;
             $user = $event->user;
             $fb_page = $event->fb_page;
-            $path = env('BLOGAPI_FACEBOOK_POST') . $post['image'];
-            $url = asset($path);
+            $path = 'http://localhost/ojt/blogapi/storage/app/public/post/' . $post['image'];
+            // $url = asset($path);
             $access_token = $event->user['token'];
             $facebook_user_id = $event->user['facebook_id'];
 
-            $profile_response = Http::get(env('FACEBOOK_GRAPH_API') . 'me/accounts?access_token=' . $access_token . '');
-
+            $profile_response = Http::get('https://graph.facebook.com/v16.0/me/accounts?access_token='.$access_token);
+            
             $count = count($profile_response['data']);
             $pr = $profile_response['data'];
-
+            
             foreach ($pr as $count) {
                 if ($count['name'] == $fb_page) {
                     $page_token = $count['access_token'];
                     $page_id = $count['id'];
-
+                    
                     if (!empty($post['image'])) {
                         $photo_response = Http::attach(
                             'attachment',
-                            file_get_contents($url),
+                            file_get_contents($path),
                             $post['image']
-                        )->post(env('FACEBOOK_GRAPH_API') . $page_id . '/photos?message=' . $post['title'] . '&access_token=' . $page_token . '');
-
-                        DB::table('posts')->where('userid', $post['userid'])
+                            )->post('https://graph.facebook.com/v16.0/' . $page_id . '/photos?message=' . $post['title'] . '&access_token=' . $page_token . '');
+                            
+                        $data = DB::table('posts')->where('userid', $post['userid'])
                             ->where('id', $post['id'])
                             ->update([
                                 'facebook_post_id' => $photo_response['post_id'],
-                                'facebook_msg_id' => $photo_response['id'],
                                 'pageid' => $page_id,
                                 'created_by' => $facebook_user_id,
                             ]);
+                            Log::info($data);
                     } else {
-                        $feed_response = Http::post(env('FACEBOOK_GRAPH_API') . $page_id . '/feed?message=' . $post['title'] . '&access_token=' . $page_token . '');
+                        $feed_response = Http::post('https://graph.facebook.com/v16.0/'. $page_id . '/feed?message=' . $post['title'] . '&access_token=' . $page_token);
 
-                        $facebook_data = DB::table('posts')->where('userid', $post['userid'])
+                        $data = DB::table('posts')->where('userid', $post['userid'])
                             ->where('id', $post['id'])
                             ->update([
-                                'facebook_msg_id' => $feed_response['id'],
+                                'facebook_post_id' => $feed_response['id'],
                                 'pageid' => $page_id,
                                 'created_by' => $facebook_user_id,
                             ]);
+                            Log::info($data);
                     }
                 }
             }
         } catch (\Exception $e) {
-            Log::channel('facebook')->critical($e->getMessage());
+            Log::critical($e->getMessage());
         }
     }
 }
