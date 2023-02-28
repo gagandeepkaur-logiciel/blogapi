@@ -2,7 +2,7 @@
 ## It has multiauthentication system (Superadmin, Admin and user).
 ## 1. Log In API -  
 ### - Registered users can login through passport authentication.
-### - 2 admins are facebook users which can login using socialite through facebook authentication.
+### - Two admins are facebook users which can login using socialite through facebook authentication.
 ## 2. Logout API - 
 ### Registered users can logout through passport authentication.
 ## 3. Admin Listing API -
