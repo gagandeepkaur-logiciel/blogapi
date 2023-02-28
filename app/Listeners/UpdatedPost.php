@@ -45,9 +45,8 @@ class UpdatedPost implements ShouldQueue
             $profile_response = Http::get('https://graph.facebook.com/v16.0/me/accounts?access_token=' . $access_token);
 
             $count = count($profile_response['data']);
-            $pr = $profile_response['data'];
 
-            foreach ($pr as $count) {
+            foreach ($profile_response['data'] as $count) {
                 if ($count['id'] == $data->pageid) {
                     $page_token = $count['access_token'];
 

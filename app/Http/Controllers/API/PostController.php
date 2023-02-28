@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Events\CreatePost;
 use App\Models\User;
 use App\Events\UpdatePost;
+use App\Events\DeletePost;
 
 class PostController extends Controller
 {
@@ -116,6 +117,7 @@ class PostController extends Controller
                 'description' => 'required',
                 'image' => 'mimes:png,jpg',
             ]);
+
             if ($validator->fails()) {
                 return response()->json(['error' => $validator->errors()], 401);
             }
@@ -132,6 +134,7 @@ class PostController extends Controller
             $extension = $request->image->extension();
             $filename = time() . '.' . $extension;
             $path = $file->storeAs('public/post/', $filename);
+
             DB::table('posts')->where('userid', $userid)
                 ->where('id', $id)
                 ->update([
@@ -140,7 +143,8 @@ class PostController extends Controller
                     'image' => $filename,
                     'created_by' => $name,
                 ]);
-                $data = DB::table('posts')->where('userid', $userid)
+
+            $data = DB::table('posts')->where('userid', $userid)
                 ->where('id', $id)
                 ->first();
 
@@ -159,19 +163,29 @@ class PostController extends Controller
     /**
      * Delete post
      */
-    public function deletepost(Request $request)
+    public function deletepost(Request $request, $id)
     {
         try {
-            $id = auth()->user()->id;
-            $data = DB::table('posts')->where('userid', $id)
-                ->where('title', $request->title)
+            $user_id = auth()->user()->id;
+            $data = DB::table('posts')->where('userid', $user_id)
+                ->where('id', $id)
                 ->first();
+
+            $user = User::where('id', $user_id)->first();
+
+            if (!empty(auth()->user()->token)) {
+                event(new DeletePost($data, $user));
+            }
 
             if (!empty($data->file)) {
                 $oldpath = public_path() . "/storage/post/$data->file";
                 unlink($oldpath);
-                DB::table('posts')->where('userid', $id)
-                    ->where('title', $request->title)
+                DB::table('posts')->where('userid', $user_id)
+                    ->where('id', $id)
+                    ->delete();
+            } else {
+                DB::table('posts')->where('userid', $user_id)
+                    ->where('id', $id)
                     ->delete();
             }
 

@@ -34,13 +34,15 @@ Route::group(['middleware' => 'auth:api'], function () {
         Route::post('insert', 'insertpost'); // Insert post
         Route::get('search', 'searchpost'); // Search Post
         Route::post('update/{id}', 'updatepost'); // Update post
-        Route::get('delete', 'deletepost'); // Delete Post
+        Route::get('delete/{id}', 'deletepost'); // Delete Post
         Route::get('post', 'show'); // Post listing
     });
     Route::controller(CommentController::class)->group(function () {
         Route::post('comment/{id}', 'comment'); // Insert comment
         Route::get('postcommentlist/{id}', 'show'); // Post Comment Listing
         Route::get('commentpostlisting/{id}', 'showlist'); // Comment Post Listing
+        Route::post('update_comment/{id}', 'update'); // Update Comment
+        Route::get('delete_comment/{id}', 'delete'); // Delete Comment
     });
     Route::controller(CategoryController::class)->group(function () { // Catgeory
         Route::post('insertcategory', 'insert'); // Insert category
@@ -55,6 +57,8 @@ Route::group(['middleware' => 'auth:api'], function () {
 
     // Webhook
     Route::get('webhook', [WebhookController::class, 'backFromWebHook']); // Redirect
+
+    Route::get('w', [WebhookController::class, 'g']);
 });
 // Facebook Authentication Routes
 Route::controller(FacebookController::class)->group(function () {
@@ -63,3 +67,4 @@ Route::controller(FacebookController::class)->group(function () {
         Route::get('callback', 'callbackFromFacebook'); // Redirect
     });
 });
+

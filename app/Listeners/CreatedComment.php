@@ -40,14 +40,12 @@ class CreatedComment implements ShouldQueue
             $page_id = Post::where('id', $data['postid'])
                 ->pluck('pageid')
                 ->first();
+
             $facebook_image_id = Post::where('id', $data['postid'])
                 ->pluck('facebook_post_id')
                 ->first();
 
-            $access_token = $user['token'];
-            $facebook_user_id = $user['facebook_id'];
-
-            $profile_response = Http::get('https://graph.facebook.com/v16.0/me/accounts?access_token=' . $access_token . '');
+            $profile_response = Http::get('https://graph.facebook.com/v16.0/me/accounts?access_token=' . $user['token']);
 
             $count = count($profile_response['data']);
             $pr = $profile_response['data'];
@@ -56,21 +54,21 @@ class CreatedComment implements ShouldQueue
                     $page_token = $count['access_token'];
                 }
             }
-            $feed_response = Http::get('https://graph.facebook.com/v16.0/' . $page_id . '/feed?&access_token=' . $page_token . '');
 
-            if (!empty($facebook_image_id)) {
-                $comment_response = Http::post('https://graph.facebook.com/v16.0/' . $facebook_image_id . '/comments/?message=' . $data['comment'] . '&access_token=' . $page_token . '');
+            $feed_response = Http::get('https://graph.facebook.com/v16.0/' . $page_id . '/feed?&access_token=' . $page_token);
 
-                $data = DB::table('comments')->where('userid', $data['userid'])
-                    ->where('id', $data['id'])
-                    ->update([
-                        'facebook_post_id' => $facebook_image_id,
-                        'comment_id' => $comment_response['id'],
-                        'pageid' => $page_id,
-                        'created_by' => $facebook_user_id,
-                    ]);
-                    Log::info($data);
-            } 
+            $comment_response = Http::post('https://graph.facebook.com/v16.0/' . $facebook_image_id . '/comments/?message=' . $data['comment'] . '&access_token=' . $page_token . '');
+
+            $data = DB::table('comments')->where('userid', $data['userid'])
+                ->where('id', $data['id'])
+                ->update([
+                    'facebook_post_id' => $facebook_image_id,
+                    'comment_id' => $comment_response['id'],
+                    'pageid' => $page_id,
+                    'created_by' => $user['facebook_id'],
+                ]);
+
+            Log::info($comment_response);
         } catch (\Exception $e) {
             Log::critical($e->getMessage());
         }

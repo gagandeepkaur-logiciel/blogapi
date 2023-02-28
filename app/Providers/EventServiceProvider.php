@@ -12,6 +12,12 @@ use App\Events\CreateComment;
 use App\Listeners\CreatedComment;
 use App\Events\UpdatePost;
 use App\Listeners\UpdatedPost;
+use App\Events\UpdateComment;
+use App\Listeners\UpdatedComment;
+use App\Events\DeleteComment;
+use App\Listeners\DeletedComment;
+use App\Events\DeletePost;
+use App\Listeners\DeletedPost;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -35,6 +41,22 @@ class EventServiceProvider extends ServiceProvider
 
         UpdatePost::class => [
             UpdatedPost::class,
+        ],
+
+        UpdateComment::class => [
+            UpdatedComment::class,
+        ],
+
+        DeleteComment::class => [
+            DeletedComment::class,
+        ],
+
+        UpdateComment::class => [
+            UpdatedComment::class,
+        ],
+
+        DeletePost::class => [
+            DeletedPost::class,
         ],
     ];
 

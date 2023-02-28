@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Validator;
 use App\Events\CreateComment;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
+use App\Events\UpdateComment;
+use App\Events\DeleteComment;
 
 class CommentController extends Controller
 {
@@ -49,8 +51,42 @@ class CommentController extends Controller
 
             return response()->json(['success' => 'Comment posted successfully']);
         } catch (QueryException $e) {
-            Log::critical($e);            
-            return response('Something went wrong'); 
+            Log::critical($e);
+            return response('Something went wrong');
+        }
+    }
+
+    /**
+     * Update comment
+     */
+    public function update(Request $request, $id)
+    {
+        try {
+            $user_id = auth()->user()->id;
+
+            $validator = Validator::make($request->all(), [
+                'comment' => 'required',
+            ]);
+
+            Comment::where('userid', $user_id)
+                ->where('id', $id)
+                ->update([
+                    'comment' => $request->comment,
+                ]);
+
+            $data = Comment::where('userid', $user_id)
+                ->where('id', $id)
+                ->first();
+
+            $user = User::where('id', $user_id)->first();
+
+            if (!empty(auth()->user()->token)) {
+                event(new UpdateComment($data, $user));
+            }
+
+            return response()->json(['success' => 'Comment updated successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['Something went wrong']);
         }
     }
 
@@ -103,4 +139,25 @@ class CommentController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
+
+    public function delete($id)
+    {
+        try {
+            $user_id = auth()->user()->id;
+            $data = Comment::where('id', $id)->first();
+            $user = User::where('id', $user_id)->first();
+
+            if (!empty(auth()->user()->token)) {
+                event(new DeleteComment($data, $user));
+            }
+
+            $data = Comment::where('id', $id)->delete();
+
+            return response()->json('Comment successfully deleted');
+        } catch (\Exception $e) {
+            Log::critical($e->getMessage());
+            return response('Something went wrong');
+        }
+    }
 }
+
