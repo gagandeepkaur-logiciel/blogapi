@@ -150,10 +150,8 @@ class PostController extends Controller
 
             $user = User::where('id', $userid)->first();
 
-            if (!empty(auth()->user()->token)) {
-                event(new UpdatePost($data, $user));
-            }
-
+            event(new UpdatePost($data, $user));
+            
             return response()->json(['success' => 'Successfully updated!']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);

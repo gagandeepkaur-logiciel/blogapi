@@ -34,18 +34,15 @@ class CreatedComment implements ShouldQueue
     public function handle(CreateComment $event)
     {
         try {
-            $data = $event->data;
-            $user = $event->user;
-
-            $page_id = Post::where('id', $data['postid'])
+            $page_id = Post::where('id', $event->data['postid'])
                 ->pluck('pageid')
                 ->first();
 
-            $facebook_image_id = Post::where('id', $data['postid'])
+            $facebook_image_id = Post::where('id', $event->data['postid'])
                 ->pluck('facebook_post_id')
                 ->first();
 
-            $profile_response = Http::get('https://graph.facebook.com/v16.0/me/accounts?access_token=' . $user['token']);
+            $profile_response = Http::get(env('FACEBOOK_GRAPH_API') .'me/accounts?access_token=' . $event->user['token']);
 
             $count = count($profile_response['data']);
             $pr = $profile_response['data'];
@@ -55,20 +52,20 @@ class CreatedComment implements ShouldQueue
                 }
             }
 
-            $feed_response = Http::get('https://graph.facebook.com/v16.0/' . $page_id . '/feed?&access_token=' . $page_token);
+            $feed_response = Http::get(env('FACEBOOK_GRAPH_API') . $page_id . '/feed?&access_token=' . $page_token);
 
-            $comment_response = Http::post('https://graph.facebook.com/v16.0/' . $facebook_image_id . '/comments/?message=' . $data['comment'] . '&access_token=' . $page_token . '');
+            $comment_response = Http::post(env('FACEBOOK_GRAPH_API') . $facebook_image_id . '/comments/?message=' . $event->data['comment'] . '&access_token=' . $page_token . '');
 
-            $data = DB::table('comments')->where('userid', $data['userid'])
-                ->where('id', $data['id'])
+            $data = DB::table('comments')->where('userid', $event->data['userid'])
+                ->where('id', $event->data['id'])
                 ->update([
                     'facebook_post_id' => $facebook_image_id,
                     'comment_id' => $comment_response['id'],
                     'pageid' => $page_id,
-                    'created_by' => $user['facebook_id'],
+                    'created_by' => $event->user['facebook_id'],
                 ]);
 
-            Log::info($comment_response);
+            Log::info($data);
         } catch (\Exception $e) {
             Log::critical($e->getMessage());
         }

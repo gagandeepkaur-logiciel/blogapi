@@ -31,40 +31,38 @@ Route::group(['middleware' => 'auth:api'], function () {
 
     // Admin
     Route::controller(PostController::class)->group(function () {
-        Route::post('insert', 'insertpost'); // Insert post
-        Route::get('search', 'searchpost'); // Search Post
-        Route::post('update/{id}', 'updatepost'); // Update post
-        Route::get('delete/{id}', 'deletepost'); // Delete Post
-        Route::get('post', 'show'); // Post listing
+        Route::post('insert', 'insertpost');
+        Route::get('search', 'searchpost'); 
+        Route::post('update/{id}', 'updatepost'); 
+        Route::get('delete/{id}', 'deletepost'); 
+        Route::get('post', 'show'); 
     });
     Route::controller(CommentController::class)->group(function () {
-        Route::post('comment/{id}', 'comment'); // Insert comment
-        Route::get('postcommentlist/{id}', 'show'); // Post Comment Listing
-        Route::get('commentpostlisting/{id}', 'showlist'); // Comment Post Listing
-        Route::post('update_comment/{id}', 'update'); // Update Comment
-        Route::get('delete_comment/{id}', 'delete'); // Delete Comment
+        Route::post('comment/{id}', 'comment'); 
+        Route::get('postcommentlist/{id}', 'show'); 
+        Route::get('commentpostlisting/{id}', 'showlist'); 
+        Route::post('update_comment/{id}', 'update'); 
+        Route::get('delete_comment/{id}', 'delete'); 
     });
-    Route::controller(CategoryController::class)->group(function () { // Catgeory
-        Route::post('insertcategory', 'insert'); // Insert category
-        Route::get('listcategory', 'list'); // Listing
-        Route::put('editcategory/{name}', 'edit'); // Edit category
-        Route::delete('deletecategory/{name}', 'delete'); // Delete category
+    Route::controller(CategoryController::class)->group(function () { 
+        Route::post('insertcategory', 'insert'); 
+        Route::get('listcategory', 'list'); 
+        Route::put('editcategory/{name}', 'edit'); 
+        Route::delete('deletecategory/{name}', 'delete'); 
     });
-    Route::get('logout', [LoginController::class, 'logged_out']); // Logout
+    Route::get('logout', [LoginController::class, 'logged_out']); 
 
     // Super Admin
-    Route::get('listadmin', [SuperadminController::class, 'listadmin']); //Admin listing
+    Route::get('listadmin', [SuperadminController::class, 'listadmin']); 
 
     // Webhook
-    Route::get('webhook', [WebhookController::class, 'backFromWebHook']); // Redirect
-
-    Route::get('w', [WebhookController::class, 'g']);
+    Route::get('webhook', [WebhookController::class, 'backFromWebHook']); 
 });
 // Facebook Authentication Routes
 Route::controller(FacebookController::class)->group(function () {
     Route::group(['middleware' => ['web']], function () {
-        Route::get('auth', 'loginUsingFacebook'); // Login
-        Route::get('callback', 'callbackFromFacebook'); // Redirect
+        Route::get('auth', 'loginUsingFacebook'); 
+        Route::get('callback', 'callbackFromFacebook'); 
     });
 });
 
