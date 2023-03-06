@@ -18,6 +18,8 @@ use App\Events\DeleteComment;
 use App\Listeners\DeletedComment;
 use App\Events\DeletePost;
 use App\Listeners\DeletedPost;
+use App\Models\Post;
+use App\Observers\PostObserver;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -67,7 +69,7 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        Post::observe(PostObserver::class);
     }
 
     /**

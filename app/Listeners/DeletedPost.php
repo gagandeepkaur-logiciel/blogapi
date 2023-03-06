@@ -7,6 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Models\FacebookPage;
 
 class DeletedPost implements ShouldQueue
 {
@@ -34,29 +35,16 @@ class DeletedPost implements ShouldQueue
     public function handle(DeletePost $event)
     {
         try {
-            $profile_response = Http::get(env('FACEBOOK_GRAPH_API') . 'me/accounts?access_token=' . $event->user['token']);
 
-            $count = count($profile_response['data']);
+            if (!empty(auth()->user()->token)) {
+                $page_token = FacebookPage::where('page_id', $event->data->pageid)
+                    ->pluck('access_token')
+                    ->first();
 
-            foreach ($profile_response['data'] as $count) {
-                if ($count['id'] == $event->data->pageid) {
-                    $page_token = $count['access_token'];
-                }
+                $response = Http::delete(env('FACEBOOK_GRAPH_API') . $event->data->facebook_post_id . '?access_token=' . $page_token);
+
+                Log::info($response);
             }
-
-            $feed_response = Http::get(env('FACEBOOK_GRAPH_API') . $event->data->pageid . '/feed?&access_token=' . $page_token);
-
-            $post_count = count($feed_response['data']);
-
-            foreach ($feed_response['data'] as $post_count) {
-                if ($post_count['id'] == $event->data->facebook_post_id) {
-                    $post_id = $post_count['id'];
-                }
-            }
-
-            $post_response = Http::delete(env('FACEBOOK_GRAPH_API') . $post_id . '?access_token=' . $page_token);
-
-            Log::info($post_response);
         } catch (\Exception $e) {
             Log::critical($e);
         }

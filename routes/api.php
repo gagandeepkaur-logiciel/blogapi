@@ -57,6 +57,9 @@ Route::group(['middleware' => 'auth:api'], function () {
 
     // Webhook
     Route::get('webhook', [WebhookController::class, 'backFromWebHook']); 
+
+    // Facebook
+    Route::get('page_tokens', [FacebookController::class, 'get_tokens_from_facebook']);
 });
 // Facebook Authentication Routes
 Route::controller(FacebookController::class)->group(function () {

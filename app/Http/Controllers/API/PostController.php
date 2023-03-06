@@ -151,7 +151,7 @@ class PostController extends Controller
             $user = User::where('id', $userid)->first();
 
             event(new UpdatePost($data, $user));
-            
+
             return response()->json(['success' => 'Successfully updated!']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
@@ -171,13 +171,11 @@ class PostController extends Controller
 
             $user = User::where('id', $user_id)->first();
 
-            if (!empty(auth()->user()->token)) {
-                event(new DeletePost($data, $user));
-            }
+            // event(new DeletePost($data, $user));
 
-            if (!empty($data->file)) {
-                $oldpath = public_path() . "/storage/post/$data->file";
-                unlink($oldpath);
+            if (!empty($data->image)) {
+                $oldpath = public_path() . "/storage/post/$data->image";
+                // unlink($oldpath);
                 DB::table('posts')->where('userid', $user_id)
                     ->where('id', $id)
                     ->delete();
@@ -189,7 +187,7 @@ class PostController extends Controller
 
             return response()->json(['success' => 'Deleted Successfully!']);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+            return response()->json(['message' => $e->getMessage()]);
         }
     }
 

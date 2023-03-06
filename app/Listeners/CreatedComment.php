@@ -9,6 +9,7 @@ use App\Models\Post;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Models\FacebookPage;
 
 class CreatedComment implements ShouldQueue
 {
@@ -38,29 +39,21 @@ class CreatedComment implements ShouldQueue
                 ->pluck('pageid')
                 ->first();
 
+            $page_token = FacebookPage::where('page_id', $page_id)
+                ->pluck('access_token')
+                ->first();
+
             $facebook_image_id = Post::where('id', $event->data['postid'])
                 ->pluck('facebook_post_id')
                 ->first();
 
-            $profile_response = Http::get(env('FACEBOOK_GRAPH_API') .'me/accounts?access_token=' . $event->user['token']);
-
-            $count = count($profile_response['data']);
-            $pr = $profile_response['data'];
-            foreach ($pr as $count) {
-                if ($count['id'] == $page_id) {
-                    $page_token = $count['access_token'];
-                }
-            }
-
-            $feed_response = Http::get(env('FACEBOOK_GRAPH_API') . $page_id . '/feed?&access_token=' . $page_token);
-
-            $comment_response = Http::post(env('FACEBOOK_GRAPH_API') . $facebook_image_id . '/comments/?message=' . $event->data['comment'] . '&access_token=' . $page_token . '');
+            $response = Http::post(env('FACEBOOK_GRAPH_API') . $facebook_image_id . '/comments/?message=' . $event->data['comment'] . '&access_token=' . $page_token);
 
             $data = DB::table('comments')->where('userid', $event->data['userid'])
                 ->where('id', $event->data['id'])
                 ->update([
                     'facebook_post_id' => $facebook_image_id,
-                    'comment_id' => $comment_response['id'],
+                    'comment_id' => $response['id'],
                     'pageid' => $page_id,
                     'created_by' => $event->user['facebook_id'],
                 ]);
