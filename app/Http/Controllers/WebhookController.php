@@ -65,4 +65,12 @@ class WebhookController extends Controller
             Log::critical($e);
         }
     }
+
+    public function user_info($request){
+        try {
+            Log::info($request);
+        } catch (\Exception $e) {
+            Log::critical($e);
+        }
+    }
 }

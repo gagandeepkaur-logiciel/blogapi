@@ -4,17 +4,23 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Post;
 use App\Transformers\PostListTransformer;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Client\Response;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
-use App\Events\CreatePost;
-use App\Models\User;
-use App\Events\UpdatePost;
-use App\Events\DeletePost;
+use Illuminate\Support\Facades\{
+    Auth,
+    DB,
+    Validator
+};
+use App\Models\{
+    User,
+    Post
+};
+use App\Events\{
+    UpdatePost,
+    DeletePost,
+    CreatePost
+};
 
 class PostController extends Controller
 {
@@ -57,9 +63,7 @@ class PostController extends Controller
 
                 $user = User::where('id', $data['userid'])->first();
 
-                if (!empty(auth()->user()->token)) {
-                    event(new CreatePost($data, $user, $fb_page));
-                }
+                event(new CreatePost($data, $user, $fb_page));
 
                 return response()->json(['success' => 'Post uploaded successfully']);
             } else {
@@ -171,11 +175,11 @@ class PostController extends Controller
 
             $user = User::where('id', $user_id)->first();
 
-            // event(new DeletePost($data, $user));
+            event(new DeletePost($data, $user));
 
             if (!empty($data->image)) {
                 $oldpath = public_path() . "/storage/post/$data->image";
-                // unlink($oldpath);
+                unlink($oldpath);
                 DB::table('posts')->where('userid', $user_id)
                     ->where('id', $id)
                     ->delete();

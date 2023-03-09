@@ -3,13 +3,18 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\User;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
 use Laravel\Socialite\Facades\Socialite;
-use Illuminate\Support\Facades\Http;
-use App\Models\FacebookPage;
+use App\Models\{
+    FacebookPage,
+    User
+};
+use Illuminate\Support\Facades\{
+    Auth,
+    Hash,
+    DB,
+    Http,
+    Log
+};
 
 class FacebookController extends Controller
 {
@@ -39,7 +44,6 @@ class FacebookController extends Controller
 
             Auth::login($saveUser, true);
 
-            // return response()->json(['success' => $user->user['id']]);
             return redirect('page_tokens');
         } catch (\Throwable $th) {
             throw $th;
@@ -66,6 +70,25 @@ class FacebookController extends Controller
             }
 
             return response()->json($data);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()]);
+        }
+    }
+
+    public function update_tokens_from_facebook($id)
+    {
+        try {
+            $user = User::where('id', $id)->first();
+            $response = Http::get(env('FACEBOOK_GRAPH_API') . 'me/accounts?access_token=' . $user['token']);
+            $count = count($response['data']);
+
+            foreach ($response['data'] as $count) {
+                $data = FacebookPage::where('page_id', $count['id'])->update([
+                    'access_token' => $count['access_token'],
+                ]);
+            }
+
+            Log::info($data);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()]);
         }
