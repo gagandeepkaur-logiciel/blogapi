@@ -45,4 +45,4 @@
 ### - Comments and post lisitng using transformer.
 # Webhook
 ## 15. Insert post into database
-### - When user will upload post facebook page then post will insert into database in background through zapier webhook.
+### - When user will upload post on facebook page then post will insert into database in background through zapier webhook.
