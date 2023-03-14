@@ -69,12 +69,10 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::get('listadmin', [SuperadminController::class, 'listadmin']);
 
     // Webhook
-    // Route::get('webhook', [WebhookController::class, 'backFromWebHook']);
+    Route::get('webhook', [WebhookController::class, 'backFromWebHook']);
 
     // Facebook
     Route::controller(FacebookController::class)->group(function () {
         Route::get('page_tokens', 'get_tokens_from_facebook');
     });
 });
-Route::get('user', [WebhookController::class, 'user_info']);
-Route::get('webhook', [WebhookController::class, 'backFromWebHook']);

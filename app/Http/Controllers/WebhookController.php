@@ -18,8 +18,9 @@ class WebhookController extends Controller
     {
         try {
             $data = Post::where('facebook_post_id', $request->id)->first();
+            return $request;
             if (empty($data)) {
-                Log::info($request);
+                Log::info([$request]);
                 $split_page_id  = preg_split('/[_]/', $request['id']);
                 $page_id = current($split_page_id);
                 if (!empty($request['full_picture'])) {
@@ -61,14 +62,6 @@ class WebhookController extends Controller
                     ]);
                 }
             }
-        } catch (\Exception $e) {
-            Log::critical($e);
-        }
-    }
-
-    public function user_info($request){
-        try {
-            Log::info($request);
         } catch (\Exception $e) {
             Log::critical($e);
         }

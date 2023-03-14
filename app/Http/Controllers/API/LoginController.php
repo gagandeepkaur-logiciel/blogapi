@@ -24,9 +24,8 @@ class LoginController extends Controller
             DB::table('users')->where('id', $user->id)->update([
                 'api_token' => $apitoken,
                 ]);
-            $success['id'] = $user->id;
             $success['name'] = $user->name;
-            return response()->json(['success' => $success]);
+            return response()->json([$success],200);
         }
     }
 
