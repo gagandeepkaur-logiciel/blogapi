@@ -10,17 +10,17 @@ use App\Transformers\AdminListTransformer;
 
 class SuperadminController extends Controller
 {
-      /**
+    /**
      * Admin Listing
      */
-    public function listadmin(){
+    public function listadmin()
+    {
         try {
             $type = auth()->user()->type;
-            if($type == 2){
-            $user = USER::where('type', 1 || 'type', 0)->get();
-            }else{
-                return response()->json(['success'=> false, 'message' => 'You have no access']);
-            }
+            if ($type == 2)
+                $user = USER::where('type', 1 || 'type', 0)->get();
+            else
+                return response()->json(['success' => false, 'message' => 'You have no access']);
 
             return  fractal($user, new AdminListTransformer())->toArray();
         } catch (\Exception $e) {

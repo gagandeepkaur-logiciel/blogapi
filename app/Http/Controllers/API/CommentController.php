@@ -67,6 +67,8 @@ class CommentController extends Controller
             $validator = Validator::make($request->all(), [
                 'comment' => 'required',
             ]);
+            if ($validator->fails())
+                return response()->json(['success' => false, 'message' => $validator]);
 
             Comment::where('userid', $user_id)
                 ->where('id', $id)
@@ -80,9 +82,8 @@ class CommentController extends Controller
 
             $user = User::where('id', $user_id)->first();
 
-            if (!empty(auth()->user()->token)) {
+            if (!empty(auth()->user()->token))
                 event(new UpdateComment($data, $user));
-            }
 
             return response()->json(['success' => 'Comment updated successfully']);
         } catch (\Exception $e) {
@@ -98,16 +99,15 @@ class CommentController extends Controller
         try {
             $userid = auth()->user()->id;
             $type = auth()->user()->type;
-            if ($type == 1) {
+            if ($type == 1)
                 $data = Post::where('userid', $userid)
                     ->where('id', $id)
                     ->with('comments')
                     ->get();
-            } else {
+            else
                 $data = Post::where('id', $id)
                     ->with('comments')
                     ->get();
-            }
 
             return collect($data)->transformWith(new PostListTransformer());
         } catch (\Exception $e) {
@@ -123,16 +123,15 @@ class CommentController extends Controller
         try {
             $userid = auth()->user()->id;
             $type = auth()->user()->type;
-            if ($type == 1) {
+            if ($type == 1)
                 $data = Comment::where('userid', $userid)
                     ->where('postid', $id)
                     ->with('post')
                     ->get();
-            } else {
+            else
                 $data = Comment::where('postid', $id)
                     ->with('post')
                     ->get();
-            }
 
             return collect($data)->transformWith(new CommentTransformer());
         } catch (\Exception $e) {
@@ -147,9 +146,8 @@ class CommentController extends Controller
             $data = Comment::where('id', $id)->first();
             $user = User::where('id', $user_id)->first();
 
-            if (!empty(auth()->user()->token)) {
+            if (!empty(auth()->user()->token))
                 event(new DeleteComment($data, $user));
-            }
 
             $data = Comment::where('id', $id)->delete();
 
@@ -160,4 +158,3 @@ class CommentController extends Controller
         }
     }
 }
-
