@@ -8,8 +8,11 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 // use Laravel\Sanctum\HasApiTokens;
 use Laravel\Passport\HasApiTokens;
-use App\Models\Post;
-use App\Models\FacebookPage;
+use App\Models\{
+    FacebookPage,
+    Post,
+    Folder
+};
 
 class User extends Authenticatable
 {
@@ -54,7 +57,13 @@ class User extends Authenticatable
         return $this->hasMany(Post::class);
     }
 
-    public function facebookpage(){
+    public function facebookpage()
+    {
         return $this->hasMany(FacebookPage::class, 'userid');
+    }
+
+    public function folders()
+    {
+        return $this->hasMany(Folder::class, 'userid');
     }
 }

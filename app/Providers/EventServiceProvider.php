@@ -6,20 +6,30 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Event;
-use App\Events\CreatePost;
-use App\Listeners\CreatedPost;
-use App\Events\CreateComment;
-use App\Listeners\CreatedComment;
-use App\Events\UpdatePost;
-use App\Listeners\UpdatedPost;
-use App\Events\UpdateComment;
-use App\Listeners\UpdatedComment;
-use App\Events\DeleteComment;
-use App\Listeners\DeletedComment;
-use App\Events\DeletePost;
-use App\Listeners\DeletedPost;
-use App\Models\Post;
-use App\Observers\PostObserver;
+use App\Events\{
+    CreatePost,
+    CreateComment,
+    UpdatePost,
+    UpdateComment,
+    DeleteComment,
+    DeletePost,
+};
+use App\Listeners\{
+    CreatedPost,
+    CreatedComment,
+    UpdatedPost,
+    UpdatedComment,
+    DeletedComment,
+    DeletedPost
+};
+use App\Models\{
+    Folder,
+    Post
+};
+use App\Observers\{
+    FolderObserver,
+    PostObserver
+};
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -70,6 +80,7 @@ class EventServiceProvider extends ServiceProvider
     public function boot()
     {
         Post::observe(PostObserver::class);
+        Folder::observe(FolderObserver::class);
     }
 
     /**

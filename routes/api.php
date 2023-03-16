@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\{
     CategoryController,
     CommentController,
+    FolderController,
     LoginController,
     PostController,
     SuperadminController
@@ -47,7 +48,7 @@ Route::group(['middleware' => 'auth:api'], function () {
         Route::post('insert', 'insertpost');
         Route::get('search', 'searchpost');
         Route::post('update/{id}', 'updatepost');
-        Route::get('delete/{id}', 'deletepost');
+        Route::delete('delete/{id}', 'deletepost');
         Route::get('post', 'show');
     });
     Route::controller(CommentController::class)->group(function () {
@@ -55,13 +56,22 @@ Route::group(['middleware' => 'auth:api'], function () {
         Route::get('postcommentlist/{id}', 'show');
         Route::get('commentpostlisting/{id}', 'showlist');
         Route::post('update_comment/{id}', 'update');
-        Route::get('delete_comment/{id}', 'delete');
+        Route::delete('delete_comment/{id}', 'delete');
     });
     Route::controller(CategoryController::class)->group(function () {
         Route::post('insertcategory', 'insert');
         Route::get('listcategory', 'list');
-        Route::put('editcategory/{name}', 'edit');
-        Route::delete('deletecategory/{name}', 'delete');
+        Route::put('editcategory/{id}', 'edit');
+        Route::delete('deletecategory/{id}', 'delete');
+    });
+    Route::controller(FolderController::class)->group(function(){
+        Route::post('insert_folder', 'insert');
+        Route::get('list_folder', 'list');
+        Route::put('update_folder/{id}', 'update');
+        Route::delete('delete_folder/{id}', 'delete');
+        Route::post('restore_folder/{id}', 'restore');
+        Route::delete('permanent_delete_folder/{id}', 'permanent_delete');
+        Route::post('restore_all_folder', 'restore_all');
     });
     Route::get('logout', [LoginController::class, 'logged_out']);
 
