@@ -25,9 +25,9 @@ class FolderObserver
      */
     public function updated(Folder $folder)
     {
-        $folder->subfolders()->each(function ($subfolders) use ($folder) {
+        $folder->subfolders()->each(function ($subfolders) use($folder){
             $subfolders->update([
-                'path' => $folder->path . '/' . $folder->with('subfolders')->pluck('name')->first,
+                'path' => $folder->path.$subfolders->name.'/',  
             ]);
         });
     }
@@ -36,7 +36,7 @@ class FolderObserver
      *
      * @param  \App\Models\Folder  $folder
      * @return void
-     */
+     */ 
     public function deleted(Folder $folder)
     {
         $folder->subfolders()->each(function ($fun) {
@@ -52,13 +52,7 @@ class FolderObserver
      */
     public function restored(Folder $folder)
     {
-        // $folder->subfolders()->each(function ($fun) {
-        //     $fun->withTrashed()->restore();
-        // });
-
-        $folder->subfolders()->each(function ($subfolders) use ($folder) {
-            $subfolders->withTrashed()->restore();
-        });
+        //
     }
 
     /**
@@ -69,8 +63,6 @@ class FolderObserver
      */
     public function forceDeleted(Folder $folder)
     {
-        $folder->subfolders()->each(function ($fun) {
-            $fun->withTrashed()->forceDelete();
-        });
+       //
     }
 }

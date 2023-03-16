@@ -12,33 +12,38 @@ use Illuminate\Support\Facades\{
 };
 use App\Models\Folder;
 use App\Transformers\FolderTransformer;
-use SebastianBergmann\CodeCoverage\Driver\Selector;
 
 class FolderController extends Controller
 {
     public function insert(Request $request)
     {
+        $input = $request->all();
         $user_id = auth()->user()->id;
-        $validator = Validator::make($request->all(), [
+
+        $validator = Validator::make($input, [
             'name' => 'required',
             'parent_id' => 'required',
         ]);
 
         if ($validator->fails())
-            return response()->json(['success' => false, 'message' => $validator]);
+            return response()->json([
+                'success' => false,
+                'message' => $validator
+            ]);
 
         try {
-            $data = Folder::where('id', $request->parent_id)->first();
-            if (!empty($data))
-                $path = File::makeDirectory($data['path'] . '/' . $request->name, 0777, true, true);
+            $data = Folder::where('id', $input['parent_id'])->first();
 
-            $folder = Folder::create([
-                'userid' => auth()->user()->id,
-                'name' => $request->name,
-                'folder_id' => $request->parent_id,
-                'path' =>  $data['path'] . '/' . $request->name,
-                'created_by' => auth()->user()->id,
-            ]);
+            if (!empty($data))
+                $path = File::makeDirectory($data['path'] . '/' . $input['name'], 0777, true, true);
+
+                $folder = Folder::create([
+                    'userid' => auth()->user()->id,
+                    'name' => $input['name'],
+                    'folder_id' => $input['parent_id'],
+                    'path' =>  $data['path']  . $input['name'] . '/',
+                    'created_by' => auth()->user()->id,
+                ]);
 
             return  fractal($folder, new FolderTransformer())->toArray();
         } catch (\Exception $e) {
@@ -50,7 +55,7 @@ class FolderController extends Controller
     public function list()
     {
         try {
-            $folder = Folder::whereNull('folder_id')
+            $folder = Folder::where('folder_id', 1)
                 ->with('subfolders')->get();
 
             return  fractal($folder, new FolderTransformer())->toArray();
@@ -61,22 +66,32 @@ class FolderController extends Controller
 
     public function update(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
+        $input = $request->all();
+
+        $validator = Validator::make($input, [
             'name' => 'required',
         ]);
+
         if ($validator->fails())
-            return response()->json(['success' => false, 'message' => $validator]);
+            return response()->json([
+                'success' => false,
+                'message' => $validator,
+            ]);
 
         try {
             $data = Folder::where('id', $id)->first();
             $parent_path = Folder::where('id', $data['folder_id'])->first();
-            File::moveDirectory($data['path'], $parent_path['path'] . '/' . $request->name, true);
-            $folder = Folder::where('id', $id)->update([
-                'name' => $request->name,
-                'path' => $parent_path['path'] . '/' . $request->name,
-            ]);
+            File::moveDirectory($data['path'], $parent_path['path'] . '/' . $input['name'], true);
 
-            return response()->json(['success' => 'Updated successfully']);
+            $folder = Folder::where('id', $id)
+                ->update([
+                    'name' => $input['name'],
+                    'path' => $parent_path['path'] . $input['name'] . '/',
+                ]);
+
+            return response()->json([
+                'success' => 'Updated successfully'
+            ]);
         } catch (\Exception $e) {
             return response()->json($e->getMessage());
         }
@@ -89,7 +104,9 @@ class FolderController extends Controller
             File::deleteDirectory($folder['path']);
             $folder->delete();
 
-            return response()->json(['success' => 'Deleted successfully']);
+            return response()->json([
+                'success' => 'Deleted successfully'
+            ]);
         } catch (\Exception $e) {
             return response()->json($e->getMessage());
         }
@@ -100,7 +117,9 @@ class FolderController extends Controller
         try {
             Folder::where('id', $id)->withTrashed()->forceDelete();
 
-            return response()->json(['success' => 'Permanent deleted successfully']);
+            return response()->json([
+                'success' => 'Permanent deleted successfully'
+            ]);
         } catch (\Exception $e) {
             return response()->json($e->getMessage());
         }
@@ -111,7 +130,9 @@ class FolderController extends Controller
         try {
             Folder::where('id', $id)->withTrashed()->restore();
 
-            return response()->json(['success' => 'Restored successfully']);
+            return response()->json([
+                'success' => 'Restored successfully'
+            ]);
         } catch (\Exception $e) {
             return response()->json($e->getMessage());
         }
@@ -122,7 +143,9 @@ class FolderController extends Controller
         try {
             Folder::onlyTrashed()->restore();
 
-            return response()->json(['success' => 'All restored successfully']);
+            return response()->json([
+                'success' => 'All restored successfully'
+            ]);
         } catch (\Exception $e) {
             return response()->json($e->getMessage());
         }
