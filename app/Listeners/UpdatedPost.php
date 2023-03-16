@@ -35,15 +35,13 @@ class UpdatedPost implements ShouldQueue
     public function handle(UpdatePost $event)
     {
         try {
-            if (!empty($event->user['token'])) {
+            if (!empty($event->user['token']))
                 $response = Http::post(env('FACEBOOK_GRAPH_API') . $event->data->facebook_post_id . '?message=' . $event->data->title . '&access_token=' . page_token($event->data->pageid));
-            }
 
-            if ($response->failed()) {
+            if ($response->failed())
                 $this->check_response($response, $event);
-            } else {
+            else
                 Log::info($response);
-            }
         } catch (\Exception $e) {
             Log::critical($e);
         }
@@ -51,10 +49,9 @@ class UpdatedPost implements ShouldQueue
 
     private function check_response($response, $event)
     {
-        if ($response['error']['code'] == 190) {
+        if ($response['error']['code'] == 190)
             $var = new FacebookController;
-            $data = $var->update_tokens_from_facebook($event->data['userid']);
-            $this->handle($event);
-        }
+        $data = $var->update_tokens_from_facebook($event->data['userid']);
+        $this->handle($event);
     }
 }
