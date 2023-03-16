@@ -85,10 +85,10 @@ class CategoryController extends Controller
     /**
      * Can delete category which has no children  
      */
-    public function delete($id)
+    public function delete($name)
     {
         try {
-            Category::where('id', $id)->delete();
+            Category::where('name', $name)->delete();
 
             return response()->json(['success' => 'Deleted successfully']);
         } catch (\Exception $e) {

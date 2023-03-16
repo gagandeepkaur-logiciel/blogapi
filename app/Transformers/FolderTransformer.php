@@ -33,7 +33,8 @@ class FolderTransformer extends TransformerAbstract
     public function transform(Folder $folder)
     {
         return [
-            'userid' => $folder->userid,
+            'id' => $folder->id,
+            'parent_id' => $folder->folder_id,
             'name' => $folder->name,
             'path' => $folder->path,
             'created_by' => $folder->created_by,
@@ -42,9 +43,10 @@ class FolderTransformer extends TransformerAbstract
 
     public function includeSubfolders(Folder $folder)
     {
-        if (!$folder->subfolders->isEmpty())
+        if (!$folder->subfolders->isEmpty()) {
             $transform = FolderTransformer::setdefaultIncludes(['subfolders']);
-        $subfolders = $folder->subfolders;
-        return $this->collection($subfolders, $transform);
+            $subfolders = $folder->subfolders;
+            return $this->collection($subfolders, $transform);
+        }
     }
 }

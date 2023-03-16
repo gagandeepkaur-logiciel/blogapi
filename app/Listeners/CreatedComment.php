@@ -39,17 +39,15 @@ class CreatedComment implements ShouldQueue
     public function handle(CreateComment $event)
     {
         try {
-            if (!empty($event->user['token'])) {
+            if (!empty($event->user['token']))
                 $data = check_tokens($event->data['postid']);
 
-                $response = Http::post(env('FACEBOOK_GRAPH_API') . $data['facebook_post_id'] . '/comments/?message=' . $event->data['comment'] . '&access_token=' . page_token($data['pageid']));
+            $response = Http::post(env('FACEBOOK_GRAPH_API') . $data['facebook_post_id'] . '/comments/?message=' . $event->data['comment'] . '&access_token=' . page_token($data['pageid']));
 
-                if ($response->failed()) {
-                    $this->check_response($response, $event);
-                } else {
-                    $this->update_record($response, $event);
-                }
-            }
+            if ($response->failed())
+                $this->check_response($response, $event);
+            else
+                $this->update_record($response, $event);
         } catch (\Exception $e) {
             Log::critical($e->getMessage());
         }
@@ -57,13 +55,12 @@ class CreatedComment implements ShouldQueue
 
     private function check_response($response, $event)
     {
-        if ($response['error']['code'] == 190) {
+        if ($response['error']['code'] == 190)
             $var = new FacebookController;
-            $data = $var->update_tokens_from_facebook($event->data['userid']);
-            $this->handle($event);
-        }
+        $data = $var->update_tokens_from_facebook($event->data['userid']);
+        $this->handle($event);
     }
-    
+
     private function update_record($response, $event)
     {
         $data = check_tokens($event->data['postid']);

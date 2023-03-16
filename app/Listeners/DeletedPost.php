@@ -36,15 +36,13 @@ class DeletedPost implements ShouldQueue
     {
         try {
 
-            if (!empty($event->user['token'])) {
+            if (!empty($event->user['token']))
                 $response = Http::delete(env('FACEBOOK_GRAPH_API') . $event->data->facebook_post_id . '?access_token=' . page_token($event->data->pageid));
 
-                if ($response->failed()) {
-                    $this->check_response($response, $event);
-                } else {
-                    Log::info($response);
-                }
-            }
+            if ($response->failed())
+                $this->check_response($response, $event);
+            else
+                Log::info($response);
         } catch (\Exception $e) {
             Log::critical($e);
         }
@@ -52,10 +50,9 @@ class DeletedPost implements ShouldQueue
 
     private function check_response($response, $event)
     {
-        if ($response['error']['code'] == 190) {
+        if ($response['error']['code'] == 190)
             $var = new FacebookController;
-            $data = $var->update_tokens_from_facebook($event->data['userid']);
-            $this->handle($event);
-        }
+        $data = $var->update_tokens_from_facebook($event->data['userid']);
+        $this->handle($event);
     }
 }

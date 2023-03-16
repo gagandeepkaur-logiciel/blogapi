@@ -40,9 +40,9 @@ class PostController extends Controller
             'category_name' => 'required',
             'facebook_page' => 'string',
         ]);
-        if ($validator->fails()) {
+        if ($validator->fails())
             return response()->json(['error' => $validator->errors()], 401);
-        }
+
         try {
             $fb_page = $request->facebook_page;
             $categoryid = DB::table('categories')->where('name', $request->category_name)
@@ -96,11 +96,10 @@ class PostController extends Controller
         try {
             $id = auth()->user()->id;
             $type = auth()->user()->type;
-            if ($type == 1) {
+            if ($type == 1)
                 $data = POST::where('userid', $id)->get();
-            } else {
+            else
                 $data = POST::select('title', 'created_by')->get();
-            }
 
             return collect($data)->transformWith(new PostListTransformer())->toArray();
         } catch (\Exception $e) {
@@ -122,17 +121,15 @@ class PostController extends Controller
                 'image' => 'mimes:png,jpg',
             ]);
 
-            if ($validator->fails()) {
+            if ($validator->fails())
                 return response()->json(['error' => $validator->errors()], 401);
-            }
 
             $post = DB::table('posts')->where('userid', $userid)
                 ->where('id', $id)
                 ->first();
-            if (!empty($post->image)) {
+            if (!empty($post->image))
                 $oldpath = public_path() . "/storage/post/$post->image";
-                unlink($oldpath);
-            }
+            unlink($oldpath);
 
             $file = $request->image;
             $extension = $request->image->extension();
@@ -204,13 +201,12 @@ class PostController extends Controller
             $id = auth()->user()->id;
             $type = auth()->user()->type;
             $search = $request->search;
-            if ($type == 1) {
+            if ($type == 1)
                 $data = POST::where('userid', $id)
                     ->where('title', 'LIKE', '%' . $search . '%')
                     ->get();
-            } else {
+            else
                 $data = POST::where('title', 'LIKE', '%' . $search . '%')->get();
-            }
 
             return fractal($data, new PostListTransformer())->toArray();
         } catch (\Exception $e) {

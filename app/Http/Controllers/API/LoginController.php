@@ -13,23 +13,23 @@ use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 
 class LoginController extends Controller
 {
-     /**
+    /**
      * Login 
      */
     public function login(Request $request)
     {
-        if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
+        if (Auth::attempt(['email' => $request->email, 'password' => $request->password]))
             $user = Auth::user();
-            $apitoken = $success['token'] = $user->createToken('postman')->accessToken;
-            DB::table('users')->where('id', $user->id)->update([
-                'api_token' => $apitoken,
-                ]);
-            $success['name'] = $user->name;
-            return response()->json([$success],200);
-        }
+        $apitoken = $success['token'] = $user->createToken('postman')->accessToken;
+        DB::table('users')->where('id', $user->id)->update([
+            'api_token' => $apitoken,
+        ]);
+        $success['name'] = $user->name;
+
+        return response()->json([$success], 200);
     }
 
-     /**
+    /**
      * Logout
      */
     public function logged_out(Request $request)
