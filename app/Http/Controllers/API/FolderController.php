@@ -15,13 +15,16 @@ use App\Transformers\FolderTransformer;
 
 class FolderController extends Controller
 {
+    public $dir_name, $name, $parent_dir;
+
     public function insert(Request $request)
     {
         $input = $request->all();
+        $this->name = $input['name'];
         $user_id = auth()->user()->id;
 
         $validator = Validator::make($input, [
-            'name' => 'required',
+            'name' => 'required', 'unique',
             'parent_id' => 'required',
         ]);
 
@@ -33,17 +36,27 @@ class FolderController extends Controller
 
         try {
             $data = Folder::where('id', $input['parent_id'])->first();
+            $this->dir_name = $data['name'];
+            $files = Storage::allDirectories('/public');
 
-            if (!empty($data))
-                $path = File::makeDirectory($data['path'] . '/' . $input['name'], 0777, true, true);
+            if (!empty($files)) {
+                array_walk($files, function ($v) {
+                    $e = explode('/', $v);
+                    if (end($e) == $this->dir_name) {
+                        $path = implode('/', $e);
+                        Storage::makeDirectory('/' . $path . '/' . $this->name);
+                    }
+                });
+            }
 
+            if (!empty($data)) {
                 $folder = Folder::create([
                     'userid' => auth()->user()->id,
                     'name' => $input['name'],
                     'folder_id' => $input['parent_id'],
-                    'path' =>  $data['path']  . $input['name'] . '/',
                     'created_by' => auth()->user()->id,
                 ]);
+            }
 
             return  fractal($folder, new FolderTransformer())->toArray();
         } catch (\Exception $e) {
@@ -55,18 +68,20 @@ class FolderController extends Controller
     public function list()
     {
         try {
-            $folder = Folder::where('folder_id', 1)
-                ->with('subfolders')->get();
+            $folder = Folder::whereNull('folder_id')
+                ->with('subfolders')
+                ->get();
 
             return  fractal($folder, new FolderTransformer())->toArray();
         } catch (\Exception $e) {
-            return response()->json($e->getMessage());
+            return response()->json([$e->getMessage()]);
         }
     }
 
-    public function update(Request $request, $id)
+    public function rename(Request $request, $id)
     {
         $input = $request->all();
+        $this->name = $input['name'];
 
         $validator = Validator::make($input, [
             'name' => 'required',
@@ -80,17 +95,28 @@ class FolderController extends Controller
 
         try {
             $data = Folder::where('id', $id)->first();
+            $this->dir_name = $data['name'];
             $parent_path = Folder::where('id', $data['folder_id'])->first();
-            File::moveDirectory($data['path'], $parent_path['path'] . '/' . $input['name'], true);
-
+            $this->parent_dir = $parent_path['name'];
+            $files = Storage::allDirectories('/public');
+            
+            if (!empty($files)) {
+                array_walk($files, function ($v) {
+                    $e = explode('/', $v);
+                    if (end($e) == $this->parent_dir) {
+                        $path = implode('/', $e);
+                        Storage::move($path.'/'.$this->dir_name, $path . '/' . $this->name);
+                    }
+                });
+            }
+            
             $folder = Folder::where('id', $id)
                 ->update([
                     'name' => $input['name'],
-                    'path' => $parent_path['path'] . $input['name'] . '/',
                 ]);
 
             return response()->json([
-                'success' => 'Updated successfully'
+                'success' => 'Rename successfully'
             ]);
         } catch (\Exception $e) {
             return response()->json($e->getMessage());
@@ -100,9 +126,20 @@ class FolderController extends Controller
     public function delete($id)
     {
         try {
-            $folder = Folder::where('id', $id)->first();
-            File::deleteDirectory($folder['path']);
-            $folder->delete();
+            $data = Folder::where('id', $id)->first();
+            $this->dir_name = $data['name'];
+            $files = Storage::allDirectories('/public');
+            
+            if (!empty($files)) {
+                array_walk($files, function ($v) {
+                    $e = explode('/', $v);
+                    if (end($e) == $this->dir_name) {
+                        $path = implode('/', $e);
+                        Storage::deleteDirectory($path);
+                    }
+                });
+            }
+            $data->delete();
 
             return response()->json([
                 'success' => 'Deleted successfully'

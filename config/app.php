@@ -187,8 +187,6 @@ return [
          */
         Laravel\Passport\PassportServiceProvider::class,
         Laravel\Socialite\SocialiteServiceProvider::class,
-        // Yajra\DataTables\FractalServiceProvider::class,
-
         /*
          * Application Service Providers...
          */
@@ -198,7 +196,6 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
         App\Providers\HelperServiceProvider::class,
-
     ],
 
     /*

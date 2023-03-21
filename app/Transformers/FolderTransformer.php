@@ -4,6 +4,7 @@ namespace App\Transformers;
 
 use League\Fractal\TransformerAbstract;
 use App\Models\Folder;
+use Illuminate\Support\Facades\Storage;
 
 class FolderTransformer extends TransformerAbstract
 {
@@ -12,6 +13,9 @@ class FolderTransformer extends TransformerAbstract
      *
      * @var array
      */
+
+    public $fn, $path;
+
     protected array $defaultIncludes = [
         //
     ];
@@ -32,11 +36,20 @@ class FolderTransformer extends TransformerAbstract
      */
     public function transform(Folder $folder)
     {
+        $this->fn = $folder->name;
+        $files = Storage::allDirectories('/public/directoryManager');
+        array_walk($files, function ($v) {
+            $e = explode('/', $v);
+            if (end($e) == $this->fn) {
+                $this->path = implode('/', $e);
+            }
+        });
+        
         return [
             'id' => $folder->id,
             'parent_id' => $folder->folder_id,
             'name' => $folder->name,
-            'path' => $folder->path,
+            'path' => $this->path,
             'created_by' => $folder->created_by,
         ];
     }

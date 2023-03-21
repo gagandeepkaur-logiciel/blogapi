@@ -64,10 +64,10 @@ Route::group(['middleware' => 'auth:api'], function () {
         Route::put('editcategory/{id}', 'edit');
         Route::delete('deletecategory/{id}', 'delete');
     });
-    Route::controller(FolderController::class)->group(function(){
+    Route::controller(FolderController::class)->group(function () {
         Route::post('insert_folder', 'insert');
         Route::get('list_folder', 'list');
-        Route::put('update_folder/{id}', 'update');
+        Route::put('rename_folder/{id}', 'rename');
         Route::delete('delete_folder/{id}', 'delete');
         Route::post('restore_folder/{id}', 'restore');
         Route::delete('permanent_delete_folder/{id}', 'permanent_delete');
