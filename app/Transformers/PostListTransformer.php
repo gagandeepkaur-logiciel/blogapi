@@ -36,6 +36,8 @@ class PostListTransformer extends TransformerAbstract
         return [
             'title' => $post->title,
             'category' => $post->categoryid,
+            'folder' => $post->folder_id,
+            'image' => $post->image,
             'created_by' => $post->created_by,
         ];
     }

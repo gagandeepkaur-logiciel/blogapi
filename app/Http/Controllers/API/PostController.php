@@ -5,21 +5,22 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Transformers\PostListTransformer;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\{
     Auth,
     DB,
-    Validator
+    Validator,
+    Storage,
 };
 use App\Models\{
     User,
-    Post
+    Post,
+    Folder,
 };
 use App\Events\{
     UpdatePost,
     DeletePost,
-    CreatePost
+    CreatePost,
 };
 
 class PostController extends Controller
@@ -30,54 +31,63 @@ class PostController extends Controller
      */
     public function insertpost(Request $request)
     {
-        $id = auth()->user()->id;
-        $title = $request->title;
-        $description = $request->description;
-        $validator = Validator::make($request->all(), [
-            'title' => 'required', 'unique:title', 'string',
-            'description' => 'required',
-            'image' => 'mimes:png,jpg|image|max:2048',
-            'category_name' => 'required',
-            'facebook_page' => 'string',
-        ]);
-        if ($validator->fails())
-            return response()->json(['error' => $validator->errors()], 401);
-
         try {
-            $fb_page = $request->facebook_page;
-            $categoryid = DB::table('categories')->where('name', $request->category_name)
-                ->first('id');
+            $input = $request->all();
+
+            $validator = Validator::make($input, [
+                'title' => 'required', 'unique:title', 'string',
+                'description' => 'required',
+                'image' => 'mimes:png,jpg|image|max:2048',
+                'category_id' => 'required',
+                'facebook_page' => 'string',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['error' => $validator->errors()], 401);
+            }
+
             if ($request->hasFile('image')) {
-                $file = $request->image;
-                $extension = $request->image->extension();
-                $filename = time() . '.' . $extension;
-                $path = $file->storeAs('public/post/', $filename);
+                $dir_name = Folder::where('id', $input['folder_id'])->first();
+
+                $filename = time() . '.' . $input['image']->extension();
+                if (!empty($dir_name)) {
+                    $input['image']->storeAs(directory_path($dir_name['name']) . '/', $filename);
+                } else {
+                    $input['image']->storeAs('/public/directoryManager/post/', $filename);
+                }
+
                 $data = Post::create([
-                    'userid' => $id,
-                    'categoryid' => $categoryid->id,
-                    'title' => $title,
-                    'description' => $description,
+                    'userid' => auth()->user()->id,
+                    'categoryid' => $input['category_id'],
+                    'folder_id' => empty($input['folder_id']) ? '18' : $input['folder_id'],
+                    'title' => $input['title'],
+                    'description' => $input['description'],
                     'image' => $filename,
-                    'created_by' => $id,
+                    'created_by' => auth()->user()->id,
                 ]);
 
-                $user = User::where('id', $data['userid'])->first();
 
-                event(new CreatePost($data, $user, $fb_page));
+                if (!empty(auth()->user()->token)) {
+                    $fb_page = $input['facebook_page'];
+                    $user = User::where('id', $data['userid'])->first();
+
+                    event(new CreatePost($data, $user, $fb_page));
+                }
 
                 return response()->json(['success' => 'Post uploaded successfully']);
             } else {
                 $data = Post::create([
-                    'userid' => $id,
-                    'categoryid' => $categoryid->id,
-                    'title' => $title,
-                    'description' => $description,
-                    'created_by' => $id,
+                    'userid' => auth()->user()->id,
+                    'categoryid' => $input['category_id'],
+                    'title' => $input['title'],
+                    'description' => $input['description'],
+                    'created_by' => auth()->user()->id,
                 ]);
 
                 $user = User::where('id', $data['userid'])->first();
 
                 if (!empty(auth()->user()->token)) {
+                    $fb_page = $input['facebook_page'];
                     event(new CreatePost($data, $user, $fb_page));
                 }
 
@@ -101,7 +111,7 @@ class PostController extends Controller
             else
                 $data = POST::select('title', 'created_by')->get();
 
-            return collect($data)->transformWith(new PostListTransformer())->toArray();
+            return  fractal($data, new PostListTransformer())->toArray();
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
@@ -113,45 +123,50 @@ class PostController extends Controller
     public function updatepost(Request $request, $id)
     {
         try {
-            $userid = auth()->user()->id;
-            $name = auth()->user()->name;
+            $input = $request->all();
             $validator = Validator::make($request->all(), [
                 'title' => 'required',
                 'description' => 'required',
                 'image' => 'mimes:png,jpg',
             ]);
 
-            if ($validator->fails())
+            if ($validator->fails()) {
                 return response()->json(['error' => $validator->errors()], 401);
+            }
 
-            $post = DB::table('posts')->where('userid', $userid)
+            $before_update = DB::table('posts')->where('userid', auth()->user()->id)
                 ->where('id', $id)
                 ->first();
-            if (!empty($post->image))
-                $oldpath = public_path() . "/storage/post/$post->image";
-            unlink($oldpath);
 
-            $file = $request->image;
-            $extension = $request->image->extension();
-            $filename = time() . '.' . $extension;
-            $path = $file->storeAs('public/post/', $filename);
+            if (!empty($input['image'])) {
+                $folder = Folder::where('id', $before_update->folder_id)->first();
 
-            DB::table('posts')->where('userid', $userid)
+                if (!empty($before_update->image)) {
+                    $oldpath = directory_path($folder['name']) . '/' . $before_update->image;
+                    Storage::delete($oldpath);
+                }
+
+                $filename = time() . '.' . $input['image']->extension();
+                $input['image']->storeAs(directory_path($folder['name']) . '/', $filename);
+            }
+
+            DB::table('posts')->where('userid', auth()->user()->id)
                 ->where('id', $id)
                 ->update([
-                    'title' => $request->title,
-                    'description' => $request->description,
-                    'image' => $filename,
-                    'created_by' => $name,
+                    'title' => $input['title'],
+                    'description' => $input['description'],
+                    'image' => empty($input['image']) ? $before_update->image : $filename,
+                    'created_by' => auth()->user()->id,
                 ]);
 
-            $data = DB::table('posts')->where('userid', $userid)
+            $data = DB::table('posts')->where('userid', auth()->user()->id)
                 ->where('id', $id)
                 ->first();
 
-            $user = User::where('id', $userid)->first();
-
-            event(new UpdatePost($data, $user));
+            if (!empty(auth()->user()->token)) {
+                $user = User::where('id', auth()->user()->id)->first();
+                event(new UpdatePost($data, $user));
+            }
 
             return response()->json(['success' => 'Successfully updated!']);
         } catch (\Exception $e) {
@@ -165,23 +180,25 @@ class PostController extends Controller
     public function deletepost(Request $request, $id)
     {
         try {
-            $user_id = auth()->user()->id;
-            $data = DB::table('posts')->where('userid', $user_id)
+            $data = DB::table('posts')->where('userid', auth()->user()->id)
                 ->where('id', $id)
                 ->first();
 
-            $user = User::where('id', $user_id)->first();
-
-            event(new DeletePost($data, $user));
+            if (!empty(auth()->user()->token)) {
+                $user = User::where('id', auth()->user()->id)->first();
+                event(new DeletePost($data, $user));
+            }
 
             if (!empty($data->image)) {
-                $oldpath = public_path() . "/storage/post/$data->image";
-                unlink($oldpath);
-                DB::table('posts')->where('userid', $user_id)
+                $folder = Folder::where('id', $data->folder_id)->first();
+
+                Storage::delete(directory_path($folder['name']) . '/' . $data->image);
+
+                DB::table('posts')->where('userid', auth()->user()->id)
                     ->where('id', $id)
                     ->delete();
             } else {
-                DB::table('posts')->where('userid', $user_id)
+                DB::table('posts')->where('userid', auth()->user()->id)
                     ->where('id', $id)
                     ->delete();
             }
@@ -198,15 +215,13 @@ class PostController extends Controller
     public function searchpost(Request $request)
     {
         try {
-            $id = auth()->user()->id;
-            $type = auth()->user()->type;
-            $search = $request->search;
-            if ($type == 1)
-                $data = POST::where('userid', $id)
-                    ->where('title', 'LIKE', '%' . $search . '%')
+            if (auth()->user()->type == 1) {
+                $data = POST::where('userid', auth()->user()->id)
+                    ->where('title', 'LIKE', '%' . $request->search . '%')
                     ->get();
-            else
-                $data = POST::where('title', 'LIKE', '%' . $search . '%')->get();
+            } else {
+                $data = POST::where('title', 'LIKE', '%' . $request->search . '%')->get();
+            }
 
             return fractal($data, new PostListTransformer())->toArray();
         } catch (\Exception $e) {

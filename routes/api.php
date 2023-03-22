@@ -49,7 +49,7 @@ Route::group(['middleware' => 'auth:api'], function () {
         Route::get('search', 'searchpost');
         Route::post('update/{id}', 'updatepost');
         Route::delete('delete/{id}', 'deletepost');
-        Route::get('post', 'show');
+        Route::get('list', 'show');
     });
     Route::controller(CommentController::class)->group(function () {
         Route::post('comment/{id}', 'comment');

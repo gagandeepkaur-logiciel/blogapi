@@ -1,6 +1,9 @@
 <?php
 
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\{
+    Auth,
+    Storage
+};
 use App\Models\{
     FacebookPage,
     Post
@@ -30,5 +33,20 @@ if (!function_exists('page_token')) {
             ->pluck('access_token')
             ->first();
         return $data;
+    }
+}
+if (!function_exists('directory_path')) {
+    function directory_path($dir_name)
+    {
+        $files = Storage::allDirectories('/public');
+        if (!empty($files)) {
+            foreach ($files as $file) {
+                $e = explode('/', $file);
+                if (end($e) == $dir_name) {
+                    $path = implode('/', $e);
+                    return $path;
+                }
+            }
+        }
     }
 }
