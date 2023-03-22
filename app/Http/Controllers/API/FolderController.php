@@ -8,19 +8,15 @@ use Illuminate\Support\Facades\{
     Validator,
     Storage,
     Log,
-    File
 };
 use App\Models\Folder;
 use App\Transformers\FolderTransformer;
 
 class FolderController extends Controller
 {
-    public $dir_name, $name, $parent_dir;
-
     public function insert(Request $request)
     {
         $input = $request->all();
-        $this->name = $input['name'];
         $user_id = auth()->user()->id;
 
         $validator = Validator::make($input, [
@@ -36,18 +32,8 @@ class FolderController extends Controller
 
         try {
             $data = Folder::where('id', $input['parent_id'])->first();
-            $this->dir_name = $data['name'];
-            $files = Storage::allDirectories('/public');
 
-            if (!empty($files)) {
-                array_walk($files, function ($v) {
-                    $e = explode('/', $v);
-                    if (end($e) == $this->dir_name) {
-                        $path = implode('/', $e);
-                        Storage::makeDirectory('/' . $path . '/' . $this->name);
-                    }
-                });
-            }
+            Storage::makeDirectory(directory_path($data['name']) . '/' . $input['name']);
 
             if (!empty($data)) {
                 $folder = Folder::create([
@@ -81,7 +67,6 @@ class FolderController extends Controller
     public function rename(Request $request, $id)
     {
         $input = $request->all();
-        $this->name = $input['name'];
 
         $validator = Validator::make($input, [
             'name' => 'required',
@@ -95,20 +80,9 @@ class FolderController extends Controller
 
         try {
             $data = Folder::where('id', $id)->first();
-            $this->dir_name = $data['name'];
             $parent_path = Folder::where('id', $data['folder_id'])->first();
-            $this->parent_dir = $parent_path['name'];
-            $files = Storage::allDirectories('/public');
             
-            if (!empty($files)) {
-                array_walk($files, function ($v) {
-                    $e = explode('/', $v);
-                    if (end($e) == $this->parent_dir) {
-                        $path = implode('/', $e);
-                        Storage::move($path.'/'.$this->dir_name, $path . '/' . $this->name);
-                    }
-                });
-            }
+            Storage::move(directory_path($parent_path['name']).'/'.$data['name'], directory_path($parent_path['name']) . '/' . $input['name']);
             
             $folder = Folder::where('id', $id)
                 ->update([
@@ -127,18 +101,8 @@ class FolderController extends Controller
     {
         try {
             $data = Folder::where('id', $id)->first();
-            $this->dir_name = $data['name'];
-            $files = Storage::allDirectories('/public');
-            
-            if (!empty($files)) {
-                array_walk($files, function ($v) {
-                    $e = explode('/', $v);
-                    if (end($e) == $this->dir_name) {
-                        $path = implode('/', $e);
-                        Storage::deleteDirectory($path);
-                    }
-                });
-            }
+        
+            Storage::deleteDirectory(directory_path($data['name']));
             $data->delete();
 
             return response()->json([

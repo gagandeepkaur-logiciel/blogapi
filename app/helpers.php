@@ -2,11 +2,11 @@
 
 use Illuminate\Support\Facades\{
     Auth,
-    Storage
+    storage,
 };
 use App\Models\{
     FacebookPage,
-    Post
+    Post,
 };
 use App\Http\Controllers\FacebookController;
 
