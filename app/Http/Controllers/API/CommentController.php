@@ -26,21 +26,21 @@ class CommentController extends Controller
      */
     public function comment(Request $request, $id)
     {
-        $userid = auth()->user()->id;
-        $comment = $request->comment;
         $validator = Validator::make($request->all(), [
             'comment' => 'required',
-            'facebook_page' => 'string',
         ]);
         if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()], 401);
+            return response()->json([
+                'success' => false,
+                'message' => $validator,
+            ]);
         }
         try {
             $data = Comment::create([
-                'userid' => $userid,
+                'userid' => auth()->user()->id,
                 'postid' => $id,
-                'comment' => $comment,
-                'created_by' => $userid,
+                'comment' => $request->comment,
+                'created_by' => auth()->user()->id,
             ]);
 
             $user = User::where('id', $data['userid'])->first();
@@ -51,8 +51,10 @@ class CommentController extends Controller
 
             return response()->json(['success' => 'Comment posted successfully']);
         } catch (QueryException $e) {
-            Log::critical($e);
-            return response('Something went wrong');
+            Log::critical($e->getMessage());
+            return response()->json([
+                'message' => 'Something went wrong'
+            ]);
         }
     }
 
@@ -62,32 +64,39 @@ class CommentController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $user_id = auth()->user()->id;
-
             $validator = Validator::make($request->all(), [
                 'comment' => 'required',
             ]);
             if ($validator->fails())
-                return response()->json(['success' => false, 'message' => $validator]);
+                return response()->json([
+                    'success' => false,
+                    'message' => $validator,
+                ]);
 
-            Comment::where('userid', $user_id)
+            Comment::where('userid', auth()->user()->id)
                 ->where('id', $id)
                 ->update([
                     'comment' => $request->comment,
                 ]);
 
-            $data = Comment::where('userid', $user_id)
+            $data = Comment::where('userid', auth()->user()->id)
                 ->where('id', $id)
                 ->first();
 
-            $user = User::where('id', $user_id)->first();
+            $user = User::where('id', auth()->user()->id)
+                ->first();
 
             if (!empty(auth()->user()->token))
                 event(new UpdateComment($data, $user));
 
-            return response()->json(['success' => 'Comment updated successfully']);
+            return response()->json([
+                'success' => 'Comment updated successfully'
+            ]);
         } catch (\Exception $e) {
-            return response()->json(['Something went wrong']);
+            Log::critical($e->getMessage());
+            return response()->json([
+                'message' => 'Something went wrong'
+            ]);
         }
     }
 
@@ -97,21 +106,24 @@ class CommentController extends Controller
     public function show($id)
     {
         try {
-            $userid = auth()->user()->id;
             $type = auth()->user()->type;
-            if ($type == 1)
-                $data = Post::where('userid', $userid)
+            if ($type == 1) {
+                $data = Post::where('userid', auth()->user()->id)
                     ->where('id', $id)
                     ->with('comments')
                     ->get();
-            else
+            } else {
                 $data = Post::where('id', $id)
                     ->with('comments')
                     ->get();
+            }
 
             return collect($data)->transformWith(new PostListTransformer());
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+            Log::critical($e->getMessage());
+            return response()->json([
+                'message' => 'Something went wrong'
+            ]);
         }
     }
 
@@ -121,40 +133,46 @@ class CommentController extends Controller
     public function showlist($id)
     {
         try {
-            $userid = auth()->user()->id;
             $type = auth()->user()->type;
-            if ($type == 1)
-                $data = Comment::where('userid', $userid)
+            if ($type == 1) {
+                $data = Comment::where('userid', auth()->user()->id)
                     ->where('postid', $id)
                     ->with('post')
                     ->get();
-            else
+            } else {
                 $data = Comment::where('postid', $id)
                     ->with('post')
                     ->get();
+            }
 
             return collect($data)->transformWith(new CommentTransformer());
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+            Log::critical($e->getMessage());
+            return response()->json([
+                'message' => 'Something went wrong'
+            ]);
         }
     }
 
     public function delete($id)
     {
         try {
-            $user_id = auth()->user()->id;
             $data = Comment::where('id', $id)->first();
-            $user = User::where('id', $user_id)->first();
+            $user = User::where('id', auth()->user()->id)->first();
 
             if (!empty(auth()->user()->token))
                 event(new DeleteComment($data, $user));
 
             $data = Comment::where('id', $id)->delete();
 
-            return response()->json('Comment successfully deleted');
+            return response()->json([
+                'success' => 'Comment successfully deleted'
+            ]);
         } catch (\Exception $e) {
             Log::critical($e->getMessage());
-            return response('Something went wrong');
+            return response()->json([
+                'message' => 'Something went wrong'
+            ]);
         }
     }
 }

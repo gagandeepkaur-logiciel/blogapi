@@ -45,11 +45,11 @@ Route::group(['middleware' => 'auth:api'], function () {
 
     // Admin
     Route::controller(PostController::class)->group(function () {
-        Route::post('insert', 'insertpost');
-        Route::get('search', 'searchpost');
-        Route::post('update/{id}', 'updatepost');
-        Route::delete('delete/{id}', 'deletepost');
-        Route::get('list', 'show');
+        Route::post('insert', 'insert_post');
+        Route::get('search', 'search_post');
+        Route::post('update/{id}', 'update_post');
+        Route::delete('delete/{id}', 'delete_post');
+        Route::get('list', 'list_post');
     });
     Route::controller(CommentController::class)->group(function () {
         Route::post('comment/{id}', 'comment');

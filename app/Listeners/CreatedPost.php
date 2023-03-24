@@ -11,10 +11,13 @@ use Illuminate\Support\Facades\{
     DB,
     Log,
     Http,
+    File,
+    Storage,
 };
 use App\Models\{
     FacebookPage,
-    User
+    User,
+    Folder,
 };
 
 class CreatedPost implements ShouldQueue
@@ -45,11 +48,11 @@ class CreatedPost implements ShouldQueue
     public function handle(CreatePost $event)
     {
         try {
-            $data = check_Page_Token($event->fb_page);
             if (!empty($event->user['token'])) {
-
+                $folder = Folder::where('id', $event->data['folder_id'])->first();
+                $data = check_Page_Token($event->fb_page);
                 if (!empty($event->data['image'])) {
-                    $path = env('BLOGAPI_FACEBOOK_POST') . $event->data['image'];
+                    $path = env('FACEBOOK__POST') . directory_path($folder['name']) . '/' . $event->data['image'];
                     $url = asset($path);
 
                     $response = Http::attach(
@@ -74,24 +77,34 @@ class CreatedPost implements ShouldQueue
 
     private function check_response($response, $event)
     {
-        if ($response['error']['code'] == 190) {
-            $var = new FacebookController;
-            $data = $var->update_tokens_from_facebook($event->data['userid']);
-            $this->handle($event);
+        try {
+            if ($response['error']['code'] == 190) {
+                $var = new FacebookController;
+                $data = $var->update_tokens_from_facebook($event->data['userid']);
+                $this->handle($event);
+            } else {
+                Log::error("Please check your API");
+            }
+        } catch (\Exception $e) {
+            Log::critical($e->getMessage());
         }
     }
 
     private function update_record($response, $event)
     {
-        $data = check_Page_Token($event->fb_page);
-        $updated_data = DB::table('posts')->where('userid', $event->data['userid'])
-            ->where('id', $event->data['id'])
-            ->update([
-                'facebook_post_id' => $response['post_id'],
-                'pageid' => $data['page_id'],
-                'created_by' => $event->user['facebook_id'],
-            ]);
+        try {
+            $data = check_Page_Token($event->fb_page);
+            $updated_data = DB::table('posts')->where('userid', $event->data['userid'])
+                ->where('id', $event->data['id'])
+                ->update([
+                    'facebook_post_id' => $response['post_id'],
+                    'pageid' => $data['page_id'],
+                    'created_by' => $event->user['facebook_id'],
+                ]);
 
-        Log::info($updated_data);
+            Log::info($updated_data);
+        } catch (\Exception $e) {
+            Log::critical($e->getMessage());
+        }
     }
 }

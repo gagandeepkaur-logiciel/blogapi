@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\{
     Auth,
-    storage,
+    Storage,
 };
 use App\Models\{
     FacebookPage,
@@ -41,7 +41,7 @@ if (!function_exists('directory_path')) {
         $files = Storage::allDirectories('/public');
         if (!empty($files)) {
             foreach ($files as $file) {
-                $e = explode('/', $file);
+                $e = preg_split('[/]', $file);
                 if (end($e) == $dir_name) {
                     $path = implode('/', $e);
                     return $path;

@@ -55,24 +55,37 @@ class CreatedComment implements ShouldQueue
 
     private function check_response($response, $event)
     {
-        if ($response['error']['code'] == 190)
-            $var = new FacebookController;
-        $data = $var->update_tokens_from_facebook($event->data['userid']);
-        $this->handle($event);
+        try {
+            if ($response['error']['code'] == 190) {
+                $var = new FacebookController;
+                $data = $var->update_tokens_from_facebook($event->data['userid']);
+                $this->handle($event);
+            } else if ($response['error']['code'] == 100) {
+                Log::error("Param message must be a non-empty");
+            } else {
+                Log::error("Please check your API");
+            }
+        } catch (\Exception $e) {
+            Log::critical($e->getMessage());
+        }
     }
 
     private function update_record($response, $event)
     {
-        $data = check_tokens($event->data['postid']);
-        $updated_data = DB::table('comments')->where('userid', $event->data['userid'])
-            ->where('id', $event->data['id'])
-            ->update([
-                'facebook_post_id' => $data['facebook_post_id'],
-                'comment_id' => $response['id'],
-                'pageid' => $data['pageid'],
-                'created_by' => $event->user['facebook_id'],
-            ]);
+        try {
+            $data = check_tokens($event->data['postid']);
+            $updated_data = DB::table('comments')->where('userid', $event->data['userid'])
+                ->where('id', $event->data['id'])
+                ->update([
+                    'facebook_post_id' => $data['facebook_post_id'],
+                    'comment_id' => $response['id'],
+                    'pageid' => $data['pageid'],
+                    'created_by' => $event->user['facebook_id'],
+                ]);
 
-        Log::info($updated_data);
+            Log::info($updated_data);
+        } catch (\Exception $e) {
+            Log::critical($e->getMessage());
+        }
     }
 }

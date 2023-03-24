@@ -48,9 +48,16 @@ class DeletedComment implements ShouldQueue
 
     private function check_response($response, $event)
     {
-        if ($response['error']['code'] == 190)
-            $var = new FacebookController;
-        $data = $var->update_tokens_from_facebook($event->data['userid']);
-        $this->handle($event);
+        try {
+            if ($response['error']['code'] == 190) {
+                $var = new FacebookController;
+                $data = $var->update_tokens_from_facebook($event->data['userid']);
+                $this->handle($event);
+            } else {
+                Log::error("Please check your API");
+            }
+        } catch (\Exception $e) {
+            Log::critical($e->getMessage());
+        }
     }
 }

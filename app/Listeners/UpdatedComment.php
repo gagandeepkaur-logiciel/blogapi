@@ -36,20 +36,30 @@ class UpdatedComment implements ShouldQueue
         try {
             $response = Http::post(env('FACEBOOK_GRAPH_API') . $event->data['comment_id'] . '?message=' . $event->data['comment'] . '&access_token=' . page_token($event->data['pageid']));
 
-            if ($response->failed())
+            if ($response->failed()) {
                 $this->check_response($response, $event);
-            else
+            } else {
                 Log::info($response);
+            }
         } catch (\Exception $e) {
-            Log::critical($e);
+            Log::critical($e->getMessage());
         }
     }
 
     private function check_response($response, $event)
     {
-        if ($response['error']['code'] == 190)
-            $var = new FacebookController;
-        $data = $var->update_tokens_from_facebook($event->data['userid']);
-        $this->handle($event);
+        try {
+            if ($response['error']['code'] == 190) {
+                $var = new FacebookController;
+                $data = $var->update_tokens_from_facebook($event->data['userid']);
+                $this->handle($event);
+            } else if ($response['error']['code'] == 100) {
+                Log::error("Param message must be a non-empty");
+            } else {
+                Log::error("Please check your API");
+            }
+        } catch (\Exception $e) {
+            Log::critical($e->getMessage());
+        }
     }
 }

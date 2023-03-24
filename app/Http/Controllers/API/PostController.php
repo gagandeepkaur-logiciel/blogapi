@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\{
     DB,
     Validator,
     Storage,
+    Log,
 };
 use App\Models\{
     User,
@@ -29,7 +30,7 @@ class PostController extends Controller
      * Insert post into db and dispatch event
      * for upload post to facebook page
      */
-    public function insertpost(Request $request)
+    public function insert_post(Request $request)
     {
         try {
             $input = $request->all();
@@ -94,33 +95,33 @@ class PostController extends Controller
                 return response()->json(['success' => 'Message uploaded successfully']);
             }
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+            Log::critical($e->getMessage());
+            return response()->json(['Something went wrong']);
         }
     }
 
     /**
      * Post listing
      */
-    public function show()
+    public function list_post()
     {
         try {
-            $id = auth()->user()->id;
-            $type = auth()->user()->type;
-            if ($type == 1)
-                $data = POST::where('userid', $id)->get();
+            if (auth()->user()->type == 1)
+                $data = POST::where('userid', auth()->user()->id)->get();
             else
                 $data = POST::select('title', 'created_by')->get();
 
             return  fractal($data, new PostListTransformer())->toArray();
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+            Log::critical($e->getMessage());
+            return response()->json(['Something went wrong']);
         }
     }
 
     /**
      * Update post
      */
-    public function updatepost(Request $request, $id)
+    public function update_post(Request $request, $id)
     {
         try {
             $input = $request->all();
@@ -170,14 +171,15 @@ class PostController extends Controller
 
             return response()->json(['success' => 'Successfully updated!']);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+            Log::critical($e->getMessage());
+            return response()->json(['Something went wrong']);
         }
     }
 
     /**
      * Delete post
      */
-    public function deletepost(Request $request, $id)
+    public function delete_post(Request $request, $id)
     {
         try {
             $data = DB::table('posts')->where('userid', auth()->user()->id)
@@ -205,14 +207,15 @@ class PostController extends Controller
 
             return response()->json(['success' => 'Deleted Successfully!']);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()]);
+            Log::critical($e->getMessage());
+            return response()->json(['Something went wrong']);
         }
     }
 
     /**
      * Search post
      */
-    public function searchpost(Request $request)
+    public function search_post(Request $request)
     {
         try {
             if (auth()->user()->type == 1) {
@@ -225,7 +228,8 @@ class PostController extends Controller
 
             return fractal($data, new PostListTransformer())->toArray();
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+            Log::critical($e->getMessage());
+            return response()->json(['Something went wrong']);
         }
     }
 }

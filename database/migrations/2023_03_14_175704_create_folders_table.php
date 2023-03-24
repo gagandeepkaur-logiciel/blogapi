@@ -19,10 +19,7 @@ return new class extends Migration
             $table->string('name');
             $table->unsignedBigInteger('folder_id')->nullable();
             $table->foreign('folder_id')->references('id')->on('folders');
-            $table->string('path');
-            $table->unsignedBigInteger('facebookPage_id')->nullable();
-            $table->foreign('facebookPage_id')->references('id')->on('facebook_pages');
-            $table->string('album_id')->nullable();
+            $table->string('path')->nullable();
             $table->string('created_by');
             $table->softDeletes();
             $table->timestamps();
